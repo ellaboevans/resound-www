@@ -5,9 +5,8 @@ struct ContentView: View {
     @State private var isExpanded = false
 
     var body: some View {
-        Text(isExpanded ? "Expanded" : "Collapsed")
-            .foregroundColor(.white)
-            .padding()
+        PillView(trackTitle: "Blinding Lights", artistName: "The Weeknd", isPlaying: true)
+            .contentShape(Capsule())
             .onTapGesture {
                 isExpanded.toggle()
                 onToggle(isExpanded)
