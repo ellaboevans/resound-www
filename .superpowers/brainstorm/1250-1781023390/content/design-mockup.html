@@ -1,0 +1,113 @@
+<div class="section">
+  <h2>Mac Dynamic Island — Visual Design</h2>
+  <p class="subtitle">Floating pill at top center of screen, two states</p>
+</div>
+
+<div class="section">
+  <h3>Collapsed State (default)</h3>
+  <div class="mockup">
+    <div class="mockup-header">macOS Desktop (top edge)</div>
+    <div class="mockup-body" style="display:flex; justify-content:center; padding:20px;">
+      <div style="
+        background: rgba(30,30,30,0.85);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border-radius: 100px;
+        padding: 8px 20px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        border: 1px solid rgba(255,255,255,0.08);
+        box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        font-family: -apple-system, sans-serif;
+        font-size: 13px;
+        color: white;
+      ">
+        <span style="opacity:0.6">♫</span>
+        <span>Blinding Lights — The Weeknd</span>
+        <span style="opacity:0.4">│</span>
+        <span style="opacity:0.6">☁ 72°</span>
+        <span style="opacity:0.4">│</span>
+        <span style="opacity:0.6">⬆ 45% • ⬇ 120Mbps</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Expanded State (click/hover)</h3>
+  <div class="mockup">
+    <div class="mockup-header">macOS Desktop (top edge)</div>
+    <div class="mockup-body" style="display:flex; justify-content:center; padding:20px;">
+      <div style="
+        background: rgba(30,30,30,0.92);
+        backdrop-filter: blur(30px);
+        -webkit-backdrop-filter: blur(30px);
+        border-radius: 16px;
+        padding: 20px;
+        width: 360px;
+        border: 1px solid rgba(255,255,255,0.08);
+        box-shadow: 0 8px 40px rgba(0,0,0,0.4);
+        font-family: -apple-system, sans-serif;
+        color: white;
+      ">
+        <div style="display:flex; gap:16px; margin-bottom:16px;">
+          <div style="width:56px;height:56px;background:#444;border-radius:8px;flex-shrink:0;"></div>
+          <div style="flex:1; min-width:0;">
+            <div style="font-size:14px;font-weight:600;">Blinding Lights</div>
+            <div style="font-size:12px;opacity:0.6;">The Weeknd</div>
+            <div style="font-size:12px;opacity:0.4;margin-top:8px;">After Hours</div>
+          </div>
+        </div>
+        <div style="height:4px;background:rgba(255,255,255,0.1);border-radius:2px;margin-bottom:12px;">
+          <div style="width:35%;height:100%;background:white;border-radius:2px;"></div>
+        </div>
+        <div style="display:flex; justify-content:center; gap:20px; font-size:18px; margin-bottom:16px;">
+          <span style="opacity:0.5">⏮</span>
+          <span>▶</span>
+          <span style="opacity:0.5">⏭</span>
+        </div>
+        <hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:12px 0;">
+        <div style="display:flex; justify-content:space-between; font-size:12px;">
+          <div>
+            <div style="opacity:0.5;font-size:10px;">CLIPBOARD</div>
+            <div style="margin-top:2px;">Cmd+V: latest copy</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="opacity:0.5;font-size:10px;">SYSTEM</div>
+            <div style="margin-top:2px;">⬆ 45% • ⬇ 120Mbps</div>
+          </div>
+        </div>
+        <div style="font-size:11px;opacity:0.4;margin-top:8px;text-align:center;">☁ San Francisco • 72° / 58°</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Transition</h3>
+  <p class="subtitle">Pill smoothly morphs into the expanded panel — spring animation, origin-aware scale, blur backdrop</p>
+  <div style="display:flex; align-items:center; justify-content:center; gap:16px; padding:12px;">
+    <div style="
+      background: rgba(30,30,30,0.85);
+      border-radius: 100px;
+      padding: 8px 20px;
+      font-size:12px;
+      border:1px solid rgba(255,255,255,0.08);
+      color:white; font-family:-apple-system;">
+      ♫ Blinding Lights
+    </div>
+    <span style="font-size:20px;opacity:0.3;">→</span>
+    <div style="
+      background: rgba(30,30,30,0.92);
+      border-radius: 16px;
+      padding: 16px;
+      width: 200px;
+      border:1px solid rgba(255,255,255,0.08);
+      color:white; font-family:-apple-system; font-size:12px;
+    ">
+      ♫ Blinding Lights<br>
+      <span style="opacity:0.5;">The Weeknd</span>
+    </div>
+  </div>
+</div>
