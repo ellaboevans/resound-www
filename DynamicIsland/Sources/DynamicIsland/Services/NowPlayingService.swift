@@ -14,7 +14,7 @@ private let mediaRemoteHandle: UnsafeMutableRawPointer? = {
 
 private func sendMediaCommand(_ command: MRCommand) {
     guard let handle = mediaRemoteHandle else { return }
-    let sym = dlsym(handle, "MRMediaRemoteSendCommand")
+    guard let sym = dlsym(handle, "MRMediaRemoteSendCommand") else { return }
     typealias Func = @convention(c) (UInt32, CFDictionary?) -> Void
     let fn = unsafeBitCast(sym, to: Func.self)
     fn(command.rawValue, nil)
