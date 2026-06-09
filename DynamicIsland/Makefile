@@ -6,6 +6,7 @@ run: build
 
 release:
 	swift build -c release
+	mkdir -p DynamicIsland.app/Contents/MacOS
 	cp -r .build/release/DynamicIsland DynamicIsland.app/Contents/MacOS/
 	cp Sources/DynamicIsland/Info.plist DynamicIsland.app/Contents/
 
