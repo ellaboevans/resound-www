@@ -1,7 +1,10 @@
 import Cocoa
 
 class AppDelegate: NSObject, NSApplicationDelegate {
+    private var windowManager: WindowManager?
+
     func applicationDidFinishLaunching(_ notification: Notification) {
-        print("DynamicIsland launched")
+        windowManager = WindowManager()
+        windowManager?.show()
     }
 }
