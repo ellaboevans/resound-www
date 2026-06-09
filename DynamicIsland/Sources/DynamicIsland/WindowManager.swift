@@ -3,12 +3,14 @@ import SwiftUI
 
 final class WindowManager {
     private var window: NSWindow?
+    private var isExpanded = false
 
     func show() {
-        let contentView = ContentView()
+        let contentView = ContentView(onToggle: { [weak self] expanded in
+            self?.toggleExpanded(expanded)
+        })
 
         let hostingView = NSHostingView(rootView: contentView)
-        hostingView.translatesAutoresizingMaskIntoConstraints = false
 
         let window = NSWindow(
             contentRect: .zero,
@@ -23,10 +25,14 @@ final class WindowManager {
         window.ignoresMouseEvents = false
         window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
         window.contentView = hostingView
-        window.makeKeyAndOrderFront(nil)
 
         positionWindow(window)
+        window.makeKeyAndOrderFront(nil)
         self.window = window
+    }
+
+    deinit {
+        window?.close()
     }
 
     private func positionWindow(_ window: NSWindow) {
@@ -40,6 +46,7 @@ final class WindowManager {
     }
 
     func toggleExpanded(_ expanded: Bool) {
+        isExpanded = expanded
         guard let window = window, let screen = NSScreen.main?.visibleFrame else { return }
         let windowWidth: CGFloat = 340
         let collapsedHeight: CGFloat = 34
