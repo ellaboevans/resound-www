@@ -18,6 +18,7 @@ struct ContentView: View {
         }
         .frame(width: 340)
         .onAppear { nowPlaying.start() }
+        .onDisappear { nowPlaying.stop() }
     }
 
     private var pillView: some View {
@@ -27,6 +28,7 @@ struct ContentView: View {
         )
         .contentShape(Capsule())
         .onTapGesture {
+            guard !nowPlaying.trackTitle.isEmpty else { return }
             withAnimation(.spring(duration: 0.4, bounce: 0.08)) {
                 isExpanded.toggle()
             }
