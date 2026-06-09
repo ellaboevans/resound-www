@@ -2,6 +2,24 @@ import Foundation
 import MediaPlayer
 import Combine
 
+private enum MRCommand: UInt32 {
+    case togglePlayPause = 2
+    case nextTrack = 4
+    case previousTrack = 5
+}
+
+private let mediaRemoteHandle: UnsafeMutableRawPointer? = {
+    dlopen("/System/Library/PrivateFrameworks/MediaRemote.framework/MediaRemote", RTLD_LAZY)
+}()
+
+private func sendMediaCommand(_ command: MRCommand) {
+    guard let handle = mediaRemoteHandle else { return }
+    let sym = dlsym(handle, "MRMediaRemoteSendCommand")
+    typealias Func = @convention(c) (UInt32, CFDictionary?) -> Void
+    let fn = unsafeBitCast(sym, to: Func.self)
+    fn(command.rawValue, nil)
+}
+
 final class NowPlayingService {
     private var timer: Timer?
     let publisher = PassthroughSubject<NowPlayingInfo, Never>()
@@ -25,6 +43,18 @@ final class NowPlayingService {
     func stopMonitoring() {
         timer?.invalidate()
         timer = nil
+    }
+
+    func playPause() {
+        sendMediaCommand(.togglePlayPause)
+    }
+
+    func nextTrack() {
+        sendMediaCommand(.nextTrack)
+    }
+
+    func previousTrack() {
+        sendMediaCommand(.previousTrack)
     }
 
     private func pollNowPlaying() {

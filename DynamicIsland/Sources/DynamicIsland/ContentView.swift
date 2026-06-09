@@ -45,9 +45,9 @@ struct ContentView: View {
             elapsedText: nowPlaying.formattedElapsed,
             remainingText: nowPlaying.formattedRemaining,
             isPlaying: nowPlaying.isPlaying,
-            onPlayPause: { },
-            onNext: { },
-            onPrevious: { }
+            onPlayPause: { nowPlaying.playPause() },
+            onNext: { nowPlaying.nextTrack() },
+            onPrevious: { nowPlaying.previousTrack() }
         )
     }
 }

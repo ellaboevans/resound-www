@@ -46,6 +46,10 @@ final class NowPlayingViewModel: ObservableObject {
         cancellables.removeAll()
     }
 
+    func playPause() { service.playPause() }
+    func nextTrack() { service.nextTrack() }
+    func previousTrack() { service.previousTrack() }
+
     private func formatTime(_ time: TimeInterval) -> String {
         let minutes = Int(time) / 60
         let seconds = Int(time) % 60
