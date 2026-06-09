@@ -26,6 +26,7 @@ final class NowPlayingViewModel: ObservableObject {
     }
 
     func start() {
+        cancellables.removeAll()
         service.publisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] info in
@@ -42,6 +43,7 @@ final class NowPlayingViewModel: ObservableObject {
 
     func stop() {
         service.stopMonitoring()
+        cancellables.removeAll()
     }
 
     private func formatTime(_ time: TimeInterval) -> String {
