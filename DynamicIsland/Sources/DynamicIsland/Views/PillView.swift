@@ -3,6 +3,7 @@ import SwiftUI
 struct PillView: View {
     let trackTitle: String
     let isPlaying: Bool
+    @State private var isPressed = false
 
     var body: some View {
         HStack(spacing: 10) {
@@ -28,6 +29,13 @@ struct PillView: View {
                 .stroke(Color.white.opacity(0.06), lineWidth: 1)
         )
         .shadow(color: .black.opacity(0.3), radius: 12, y: 4)
+        .scaleEffect(isPressed ? 0.97 : 1)
+        .animation(.easeOut(duration: 0.12), value: isPressed)
+        .simultaneousGesture(
+            DragGesture(minimumDistance: 0)
+                .onChanged { _ in isPressed = true }
+                .onEnded { _ in isPressed = false }
+        )
     }
 
     private var albumArtIcon: some View {

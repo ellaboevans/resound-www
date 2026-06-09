@@ -4,6 +4,8 @@ import SwiftUI
 final class WindowManager {
     private var window: NSWindow?
     private var isExpanded = false
+    private let collapsedHeight: CGFloat = 40
+    private let expandedHeight: CGFloat = 210
 
     func show() {
         let contentView = ContentView(onToggle: { [weak self] expanded in
@@ -37,29 +39,25 @@ final class WindowManager {
 
     private func positionWindow(_ window: NSWindow) {
         guard let screen = NSScreen.main?.visibleFrame else { return }
-        let windowWidth: CGFloat = 340
-        let windowHeight: CGFloat = 34
-        let x = screen.midX - windowWidth / 2
-        let y = screen.maxY - windowHeight - 8
-        window.setFrame(NSRect(x: x, y: y, width: windowWidth, height: windowHeight), display: true)
+        let width: CGFloat = 340
+        let y = screen.maxY - collapsedHeight - 8
+        let x = screen.midX - width / 2
+        window.setFrame(NSRect(x: x, y: y, width: width, height: collapsedHeight), display: true)
         window.invalidateShadow()
     }
 
     func toggleExpanded(_ expanded: Bool) {
         isExpanded = expanded
         guard let window = window, let screen = NSScreen.main?.visibleFrame else { return }
-        let windowWidth: CGFloat = 340
-        let collapsedHeight: CGFloat = 34
-        let expandedHeight: CGFloat = 200
-
+        let width: CGFloat = 340
         let height = expanded ? expandedHeight : collapsedHeight
         let y = screen.maxY - height - 8
-        let x = screen.midX - windowWidth / 2
+        let x = screen.midX - width / 2
 
         NSAnimationContext.runAnimationGroup { context in
             context.duration = expanded ? 0.4 : 0.2
-            context.timingFunction = CAMediaTimingFunction(name: .easeOut)
-            window.animator().setFrame(NSRect(x: x, y: y, width: windowWidth, height: height), display: true)
+            context.timingFunction = CAMediaTimingFunction(controlPoints: 0.23, 1, 0.32, 1)
+            window.animator().setFrame(NSRect(x: x, y: y, width: width, height: height), display: true)
             window.invalidateShadow()
         }
     }

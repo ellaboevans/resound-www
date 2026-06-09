@@ -37,17 +37,19 @@ struct ContentView: View {
     }
 
     private var expandedPanel: some View {
-        ExpandedPanel(
-            trackTitle: nowPlaying.trackTitle,
-            artistName: nowPlaying.artistName,
-            albumTitle: nowPlaying.albumTitle,
-            progress: nowPlaying.progress,
-            elapsedText: nowPlaying.formattedElapsed,
-            remainingText: nowPlaying.formattedRemaining,
-            isPlaying: nowPlaying.isPlaying,
-            onPlayPause: { nowPlaying.playPause() },
-            onNext: { nowPlaying.nextTrack() },
-            onPrevious: { nowPlaying.previousTrack() }
-        )
+        ExpandedPanel {
+            MusicSection(
+                trackTitle: nowPlaying.trackTitle,
+                artistName: nowPlaying.artistName,
+                albumTitle: nowPlaying.albumTitle,
+                progress: nowPlaying.progress,
+                elapsedText: nowPlaying.formattedElapsed,
+                remainingText: nowPlaying.formattedRemaining,
+                isPlaying: nowPlaying.isPlaying,
+                onPlayPause: { nowPlaying.playPause() },
+                onNext: { nowPlaying.nextTrack() },
+                onPrevious: { nowPlaying.previousTrack() }
+            )
+        }
     }
 }
