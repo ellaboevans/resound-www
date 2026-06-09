@@ -25,15 +25,6 @@ struct MusicSection: View {
                 .padding(.horizontal, 16)
                 .padding(.top, 10)
 
-            HStack(spacing: 28) {
-                controlButton("backward.fill", action: onPrevious)
-                playPauseButton
-                controlButton("forward.fill", action: onNext)
-            }
-            .padding(.horizontal, 16)
-            .padding(.top, 12)
-            .padding(.bottom, 16)
-
             HStack {
                 Text(elapsedText)
                     .font(.system(size: 10, weight: .medium))
@@ -43,8 +34,17 @@ struct MusicSection: View {
                     .font(.system(size: 10, weight: .medium))
                     .monospacedDigit()
             }
-            .opacity(0.3)
+            .opacity(0.4)
             .padding(.horizontal, 16)
+            .padding(.top, 4)
+
+            HStack(spacing: 28) {
+                controlButton("backward.fill", action: onPrevious)
+                playPauseButton
+                controlButton("forward.fill", action: onNext)
+            }
+            .padding(.horizontal, 16)
+            .padding(.top, 12)
             .padding(.bottom, 16)
         }
     }
@@ -94,9 +94,8 @@ struct MusicSection: View {
                     .fill(Color.white.opacity(0.08))
                     .frame(height: 3)
                 Capsule()
-                    .fill(Color.white)
+                    .fill(Color.white.opacity(0.5))
                     .frame(width: geo.size.width * progress, height: 3)
-                    .opacity(0.5)
             }
         }
         .frame(height: 3)
