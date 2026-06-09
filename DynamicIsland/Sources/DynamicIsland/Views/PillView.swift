@@ -2,7 +2,6 @@ import SwiftUI
 
 struct PillView: View {
     let trackTitle: String
-    let artistName: String
     let isPlaying: Bool
 
     var body: some View {
@@ -22,11 +21,8 @@ struct PillView: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 6)
-        .background(
-            Capsule()
-                .fill(.ultraThinMaterial)
-                .environment(\.colorScheme, .dark)
-        )
+        .colorScheme(.dark)
+        .background(Capsule().fill(.ultraThinMaterial))
         .overlay(
             Capsule()
                 .stroke(Color.white.opacity(0.06), lineWidth: 1)

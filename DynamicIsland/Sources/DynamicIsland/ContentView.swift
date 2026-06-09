@@ -5,8 +5,7 @@ struct ContentView: View {
     @State private var isExpanded = false
 
     var body: some View {
-        PillView(trackTitle: "Blinding Lights", artistName: "The Weeknd", isPlaying: true)
-            .contentShape(Capsule())
+        PillView(trackTitle: "Blinding Lights", isPlaying: true)
             .onTapGesture {
                 isExpanded.toggle()
                 onToggle(isExpanded)
