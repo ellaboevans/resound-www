@@ -3,7 +3,7 @@ import SwiftUI
 struct PillView: View {
     let trackTitle: String
     let isPlaying: Bool
-    @State private var isPressed = false
+    @State private var isHovering = false
 
     var body: some View {
         HStack(spacing: 10) {
@@ -26,16 +26,17 @@ struct PillView: View {
         .background(Capsule().fill(.ultraThinMaterial))
         .overlay(
             Capsule()
-                .stroke(Color.white.opacity(0.06), lineWidth: 1)
+                .stroke(Color.white.opacity(isHovering ? 0.15 : 0.06), lineWidth: 1)
         )
         .shadow(color: .black.opacity(0.3), radius: 12, y: 4)
-        .scaleEffect(isPressed ? 0.97 : 1)
-        .animation(.easeOut(duration: 0.12), value: isPressed)
-        .simultaneousGesture(
-            DragGesture(minimumDistance: 0)
-                .onChanged { _ in isPressed = true }
-                .onEnded { _ in isPressed = false }
-        )
+        .brightness(isHovering ? 0.05 : 0)
+        .scaleEffect(isHovering ? 1.03 : 1)
+        .animation(.easeOut(duration: 0.15), value: isHovering)
+        .onHover { h in
+            withAnimation(.easeOut(duration: 0.15)) {
+                isHovering = h
+            }
+        }
     }
 
     private var albumArtIcon: some View {

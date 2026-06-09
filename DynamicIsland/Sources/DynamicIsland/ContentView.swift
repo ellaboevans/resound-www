@@ -21,19 +21,21 @@ struct ContentView: View {
         .onDisappear { nowPlaying.stop() }
     }
 
+    private func toggleExpand() {
+        guard !nowPlaying.trackTitle.isEmpty else { return }
+        withAnimation(.spring(duration: 0.4, bounce: 0.08)) {
+            isExpanded.toggle()
+        }
+        onToggle(isExpanded)
+    }
+
     private var pillView: some View {
         PillView(
             trackTitle: nowPlaying.trackTitle,
             isPlaying: nowPlaying.isPlaying
         )
         .contentShape(Capsule())
-        .onTapGesture {
-            guard !nowPlaying.trackTitle.isEmpty else { return }
-            withAnimation(.spring(duration: 0.4, bounce: 0.08)) {
-                isExpanded.toggle()
-            }
-            onToggle(isExpanded)
-        }
+        .onTapGesture(perform: toggleExpand)
     }
 
     private var expandedPanel: some View {
@@ -42,6 +44,7 @@ struct ContentView: View {
                 trackTitle: nowPlaying.trackTitle,
                 artistName: nowPlaying.artistName,
                 albumTitle: nowPlaying.albumTitle,
+                artworkImage: nowPlaying.artworkImage,
                 progress: nowPlaying.progress,
                 elapsedText: nowPlaying.formattedElapsed,
                 remainingText: nowPlaying.formattedRemaining,

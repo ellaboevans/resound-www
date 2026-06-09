@@ -4,6 +4,7 @@ struct MusicSection: View {
     let trackTitle: String
     let artistName: String
     let albumTitle: String
+    let artworkImage: NSImage?
     let progress: Double
     let elapsedText: String
     let remainingText: String
@@ -49,22 +50,32 @@ struct MusicSection: View {
         }
     }
 
+    @ViewBuilder
     private var albumArt: some View {
-        RoundedRectangle(cornerRadius: 10, style: .continuous)
-            .fill(
-                LinearGradient(
-                    colors: [.purple, .teal],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
+        if let image = artworkImage {
+            Image(nsImage: image)
+                .resizable()
+                .aspectRatio(contentMode: .fill)
+                .frame(width: 52, height: 52)
+                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                .shadow(color: .black.opacity(0.3), radius: 8, y: 2)
+        } else {
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [.purple, .teal],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
                 )
-            )
-            .frame(width: 52, height: 52)
-            .overlay(
-                Image(systemName: "music.note")
-                    .font(.system(size: 16, weight: .bold))
-                    .foregroundColor(.white.opacity(0.8))
-            )
-            .shadow(color: .black.opacity(0.3), radius: 8, y: 2)
+                .frame(width: 52, height: 52)
+                .overlay(
+                    Image(systemName: "music.note")
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundColor(.white.opacity(0.8))
+                )
+                .shadow(color: .black.opacity(0.3), radius: 8, y: 2)
+        }
     }
 
     private var trackInfo: some View {
