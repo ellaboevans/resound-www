@@ -2,10 +2,11 @@ import Foundation
 import Combine
 
 final class NowPlayingService {
-    private var timer: Timer?
     private let queue = DispatchQueue(label: "com.dynamicisland.applescript", qos: .utility)
     private let artworkPath = "/tmp/dynamic_island_art.jpg"
     private var lastSpotifyUri: String?
+    private var lastNotificationDate = Date.distantPast
+    private var fallbackTimer: Timer?
     let publisher = PassthroughSubject<NowPlayingInfo, Never>()
 
     struct NowPlayingInfo: Equatable {
@@ -19,15 +20,38 @@ final class NowPlayingService {
     }
 
     func startMonitoring() {
-        timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
-            self?.pollNowPlaying()
+        DistributedNotificationCenter.default().addObserver(
+            self,
+            selector: #selector(playbackNotification),
+            name: NSNotification.Name("com.spotify.client.PlaybackStateChanged"),
+            object: nil
+        )
+        DistributedNotificationCenter.default().addObserver(
+            self,
+            selector: #selector(playbackNotification),
+            name: NSNotification.Name("com.apple.Music.playerInfo"),
+            object: nil
+        )
+
+        pollNowPlaying()
+
+        fallbackTimer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) { [weak self] _ in
+            guard let self = self else { return }
+            if Date().timeIntervalSince(self.lastNotificationDate) > 4 {
+                self.pollNowPlaying()
+            }
         }
+    }
+
+    @objc private func playbackNotification() {
+        lastNotificationDate = Date()
         pollNowPlaying()
     }
 
     func stopMonitoring() {
-        timer?.invalidate()
-        timer = nil
+        DistributedNotificationCenter.default().removeObserver(self)
+        fallbackTimer?.invalidate()
+        fallbackTimer = nil
     }
 
     func playPause() {

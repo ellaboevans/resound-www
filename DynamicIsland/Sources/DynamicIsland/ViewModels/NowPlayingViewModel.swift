@@ -13,19 +13,27 @@ final class NowPlayingViewModel: ObservableObject {
 
     private let service = NowPlayingService()
     private var cancellables = Set<AnyCancellable>()
-    private var tickTimer: Timer?
     private var lastTrackTitle: String = ""
 
+    private var trackStartDate: Date?
+    private var elapsedAtStart: TimeInterval = 0
+    private var elapsedTimer: Timer?
+
     var progress: Double {
-        duration > 0 ? elapsedTime / duration : 0
+        duration > 0 ? currentElapsed / duration : 0
     }
 
     var formattedElapsed: String {
-        formatTime(elapsedTime)
+        formatTime(currentElapsed)
     }
 
     var formattedRemaining: String {
-        formatTime(max(0, duration - elapsedTime))
+        formatTime(max(0, duration - currentElapsed))
+    }
+
+    private var currentElapsed: TimeInterval {
+        guard isPlaying, let startDate = trackStartDate else { return elapsedAtStart }
+        return elapsedAtStart + Date().timeIntervalSince(startDate)
     }
 
     func start() {
@@ -38,8 +46,10 @@ final class NowPlayingViewModel: ObservableObject {
                 self.artistName = info.artistName
                 self.albumTitle = info.albumTitle
                 self.duration = info.duration
-                self.elapsedTime = info.elapsedTime
+                self.elapsedAtStart = info.elapsedTime
                 self.isPlaying = info.isPlaying
+                self.trackStartDate = info.isPlaying ? Date() : nil
+                self.syncElapsed()
 
                 if !info.artworkPath.isEmpty {
                     self.artworkImage = NSImage(contentsOfFile: info.artworkPath)
@@ -48,7 +58,7 @@ final class NowPlayingViewModel: ObservableObject {
                 }
                 lastTrackTitle = info.trackTitle
 
-                self.updateTickTimer()
+                self.updateElapsedTimer()
             }
             .store(in: &cancellables)
         service.startMonitoring()
@@ -56,8 +66,8 @@ final class NowPlayingViewModel: ObservableObject {
 
     func stop() {
         service.stopMonitoring()
-        tickTimer?.invalidate()
-        tickTimer = nil
+        elapsedTimer?.invalidate()
+        elapsedTimer = nil
         cancellables.removeAll()
     }
 
@@ -65,15 +75,20 @@ final class NowPlayingViewModel: ObservableObject {
     func nextTrack() { service.nextTrack() }
     func previousTrack() { service.previousTrack() }
 
-    private func updateTickTimer() {
-        tickTimer?.invalidate()
-        tickTimer = nil
-        guard isPlaying else { return }
-        tickTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] _ in
+    private func syncElapsed() {
+        elapsedTime = currentElapsed
+    }
+
+    private func updateElapsedTimer() {
+        elapsedTimer?.invalidate()
+        elapsedTimer = nil
+        guard isPlaying else { syncElapsed(); return }
+        elapsedTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
             Task { @MainActor [weak self] in
-                self?.elapsedTime += 0.1
+                self?.syncElapsed()
             }
         }
+        syncElapsed()
     }
 
     private func formatTime(_ time: TimeInterval) -> String {
