@@ -3,21 +3,18 @@ import SwiftUI
 struct ContentView: View {
     let onToggle: (Bool) -> Void
     @State private var isExpanded = false
+    @State private var expandedOpacity: Double = 0
+    @State private var collapseTask: Task<Void, Never>?
     @ObservedObject private var nowPlaying = NowPlayingViewModel.shared
     @ObservedObject private var settings = SettingsViewModel.shared
 
     private var notchWidth: CGFloat { CGFloat(settings.notchWidth) }
 
     var body: some View {
-        ZStack(alignment: .top) {
-            VStack(spacing: -6) {
-                pillView
-                expandedPanel
-                    .offset(y: isExpanded ? 0 : 151)
-                    .opacity(isExpanded ? 1 : 0)
-                    .animation(.spring(response: 0.25, dampingFraction: 1), value: isExpanded)
-            }
-            .frame(width: notchWidth, height: 189)
+        VStack(spacing: 0) {
+            pillView
+            expandedPanel
+                .opacity(expandedOpacity)
         }
         .frame(width: notchWidth, height: isExpanded ? 189 : 38, alignment: .top)
         .clipped()
@@ -32,8 +29,25 @@ struct ContentView: View {
             .fill(.black)
         )
         .onHover { hovering in
-            isExpanded = hovering
-            onToggle(hovering)
+            collapseTask?.cancel()
+            if hovering {
+                isExpanded = true
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    expandedOpacity = 1
+                }
+                onToggle(true)
+            } else {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    expandedOpacity = 0
+                }
+                collapseTask = Task { @MainActor in
+                    try? await Task.sleep(nanoseconds: 200_000_000)
+                    guard !Task.isCancelled else { return }
+                    isExpanded = false
+                    expandedOpacity = 0
+                    onToggle(false)
+                }
+            }
         }
     }
 

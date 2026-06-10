@@ -76,8 +76,10 @@ final class WindowManager {
         let work = DispatchWorkItem { [weak self] in
             guard let self, self.isExpanded else { return }
             self.isExpanded = false
-            guard let window = self.window else { return }
-            self.positionWindow(window, height: self.collapsedHeight)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { [weak self] in
+                guard let self, let window = self.window else { return }
+                self.positionWindow(window, height: self.collapsedHeight)
+            }
         }
         collapseWorkItem = work
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5, execute: work)
