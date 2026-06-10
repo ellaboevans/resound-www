@@ -1,18 +1,16 @@
 import Cocoa
 
+@MainActor
 class AppDelegate: NSObject, NSApplicationDelegate {
+    private let coordinator = AppCoordinator()
+
     func applicationDidFinishLaunching(_ notification: Notification) {
         closeEmptyWindow()
-        NowPlayingViewModel.shared.start()
-        WindowManager.shared.show()
-        MenuBarManager.shared.setup()
-        HotkeyManager.shared.start {
-            WindowManager.shared.toggle()
-        }
+        coordinator.start()
     }
 
     func applicationWillTerminate(_ notification: Notification) {
-        HotkeyManager.shared.stop()
+        coordinator.stop()
     }
 
     private func closeEmptyWindow() {

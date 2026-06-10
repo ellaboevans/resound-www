@@ -1,36 +1,82 @@
 import SwiftUI
 import AppKit
 
-final class MenuBarManager: NSObject {
+@MainActor
+final class MenuBarManager: NSObject, NSMenuDelegate {
     static let shared = MenuBarManager()
 
     private let statusItem: NSStatusItem
-    private let popover: NSPopover
+    private let menu = NSMenu()
 
     private override init() {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
-        popover = NSPopover()
         super.init()
 
         if let button = statusItem.button {
             button.image = NSImage(systemSymbolName: "music.note", accessibilityDescription: "Now Playing")
-            button.action = #selector(togglePopover)
-            button.target = self
+            button.image?.isTemplate = true
         }
 
-        popover.contentViewController = NSHostingController(rootView: MenuBarView())
-        popover.behavior = .transient
+        menu.delegate = self
+        statusItem.menu = menu
     }
 
-    func setup() {}
+    func setup() {
+        rebuildMenu()
+    }
 
-    @objc private func togglePopover() {
-        if popover.isShown {
-            popover.performClose(nil)
-        } else {
-            guard let button = statusItem.button else { return }
-            popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
-        }
+    func menuWillOpen(_ menu: NSMenu) {
+        rebuildMenu()
+    }
+
+    private func rebuildMenu() {
+        let nowPlaying = NowPlayingViewModel.shared
+        menu.removeAllItems()
+
+        let title = nowPlaying.trackTitle.isEmpty ? "No track playing" : nowPlaying.trackTitle
+        let artist = nowPlaying.artistName.isEmpty ? "No artist" : nowPlaying.artistName
+
+        let nowPlayingItem = NSMenuItem(title: title, action: nil, keyEquivalent: "")
+        nowPlayingItem.isEnabled = false
+        menu.addItem(nowPlayingItem)
+
+        let artistItem = NSMenuItem(title: artist, action: nil, keyEquivalent: "")
+        artistItem.isEnabled = false
+        menu.addItem(artistItem)
+
+        menu.addItem(.separator())
+        addItem("Previous", action: #selector(previousTrack))
+        addItem(nowPlaying.isPlaying ? "Pause" : "Play", action: #selector(playPause))
+        addItem("Next", action: #selector(nextTrack))
+        menu.addItem(.separator())
+        addItem("Settings...", action: #selector(openSettings))
+        addItem("Quit Resound", action: #selector(quit))
+    }
+
+    private func addItem(_ title: String, action: Selector) {
+        let item = NSMenuItem(title: title, action: action, keyEquivalent: "")
+        item.target = self
+        menu.addItem(item)
+    }
+
+    @objc private func previousTrack() {
+        NowPlayingViewModel.shared.previousTrack()
+    }
+
+    @objc private func playPause() {
+        NowPlayingViewModel.shared.playPause()
+    }
+
+    @objc private func nextTrack() {
+        NowPlayingViewModel.shared.nextTrack()
+    }
+
+    @objc private func openSettings() {
+        SettingsWindowController.shared.open()
+    }
+
+    @objc private func quit() {
+        NSApplication.shared.terminate(nil)
     }
 }
 

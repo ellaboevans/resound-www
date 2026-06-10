@@ -98,7 +98,8 @@ final class WindowManager {
         case .center: x = screen.frame.midX - width / 2
         case .right: x = screen.frame.maxX - width - 8
         }
-        let y = screen.frame.maxY - height
+        let topEdge = settings.notchPosition == .center ? screen.frame.maxY : screen.visibleFrame.maxY
+        let y = topEdge - height
         let frame = NSRect(x: x, y: y, width: width, height: height)
         if window.frame.equalTo(frame) { return }
         window.setFrame(frame, display: true, animate: false)

@@ -13,7 +13,7 @@ final class NowPlayingViewModel: ObservableObject {
     @Published var elapsedTime: TimeInterval = 0
     @Published var isPlaying: Bool = false
 
-    private let service = NowPlayingService.shared
+    private let service: any NowPlayingProviding
     private var cancellables = Set<AnyCancellable>()
     private var lastTrackTitle: String = ""
     private var started = false
@@ -21,6 +21,10 @@ final class NowPlayingViewModel: ObservableObject {
     private var trackStartDate: Date?
     private var elapsedAtStart: TimeInterval = 0
     private var elapsedTimer: Timer?
+
+    init(service: any NowPlayingProviding = NowPlayingService.shared) {
+        self.service = service
+    }
 
     var progress: Double {
         duration > 0 ? currentElapsed / duration : 0

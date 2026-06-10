@@ -1,24 +1,34 @@
 import Foundation
 import Combine
 
+struct NowPlayingInfo: Equatable {
+    let trackTitle: String
+    let artistName: String
+    let albumTitle: String
+    let duration: TimeInterval
+    let elapsedTime: TimeInterval
+    let isPlaying: Bool
+    let artworkPath: String
+}
+
+protocol NowPlayingProviding {
+    var publisher: PassthroughSubject<NowPlayingInfo, Never> { get }
+    func startMonitoring()
+    func stopMonitoring()
+    func playPause()
+    func nextTrack()
+    func previousTrack()
+}
+
 final class NowPlayingService {
     static let shared = NowPlayingService()
     private let queue = DispatchQueue(label: "com.dynamicisland.applescript", qos: .utility)
-    private let artworkPath = "/tmp/dynamic_island_art.jpg"
+    private let appleScript = AppleScriptRunner()
+    private let artworkCache = SpotifyArtworkCache(path: "/tmp/dynamic_island_art.jpg")
     private var lastSpotifyUri: String?
     private var lastNotificationDate = Date.distantPast
     private var fallbackTimer: Timer?
     let publisher = PassthroughSubject<NowPlayingInfo, Never>()
-
-    struct NowPlayingInfo: Equatable {
-        let trackTitle: String
-        let artistName: String
-        let albumTitle: String
-        let duration: TimeInterval
-        let elapsedTime: TimeInterval
-        let isPlaying: Bool
-        let artworkPath: String
-    }
 
     func startMonitoring() {
         DistributedNotificationCenter.default().addObserver(
@@ -55,17 +65,9 @@ final class NowPlayingService {
         fallbackTimer = nil
     }
 
-    func playPause() {
-        runAppleScript("tell application \"Spotify\" to playpause")
-    }
-
-    func nextTrack() {
-        runAppleScript("tell application \"Spotify\" to next track")
-    }
-
-    func previousTrack() {
-        runAppleScript("tell application \"Spotify\" to previous track")
-    }
+    func playPause() { runAppleScript("tell application \"Spotify\" to playpause") }
+    func nextTrack() { runAppleScript("tell application \"Spotify\" to next track") }
+    func previousTrack() { runAppleScript("tell application \"Spotify\" to previous track") }
 
     private func pollNowPlaying() {
         queue.async { [weak self] in
@@ -76,14 +78,11 @@ final class NowPlayingService {
                 self.lastSpotifyUri = spotifyUri
 
                 if trackChanged {
-                    try? FileManager.default.removeItem(atPath: self.artworkPath)
+                    self.artworkCache.clear()
                 }
 
                 if let uri = spotifyUri {
-                    let fm = FileManager.default
-                    let hasArtwork = fm.fileExists(atPath: self.artworkPath) &&
-                        ((try? fm.attributesOfItem(atPath: self.artworkPath))?[.size] as? Int ?? 0) > 100
-                    if !hasArtwork {
+                    if !self.artworkCache.hasArtwork {
                         self.fetchArtworkAsync(spotifyUri: uri)
                     }
                 }
@@ -98,11 +97,7 @@ final class NowPlayingService {
 
     private func runAppleScript(_ source: String) {
         queue.async {
-            let process = Process()
-            process.executableURL = URL(fileURLWithPath: "/usr/bin/osascript")
-            process.arguments = ["-e", source]
-            try? process.run()
-            process.waitUntilExit()
+            _ = self.appleScript.run(source)
         }
     }
 
@@ -111,17 +106,9 @@ final class NowPlayingService {
             guard let self = self else { return }
             guard let trackId = spotifyUri.components(separatedBy: ":").last else { return }
 
-            let trackUrl = "https://open.spotify.com/track/\(trackId)"
-            guard let encoded = trackUrl.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
-                  let url = URL(string: "https://open.spotify.com/oembed?url=\(encoded)") else { return }
-
             do {
-                let data = try Data(contentsOf: url)
-                if let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
-                   let imageUrlStr = json["thumbnail_url"] as? String,
-                   let imageUrl = URL(string: imageUrlStr) {
-                    let imageData = try Data(contentsOf: imageUrl)
-                    try imageData.write(to: URL(fileURLWithPath: self.artworkPath))
+                if let imageData = try self.artworkCache.fetchImageData(for: trackId) {
+                    self.artworkCache.save(imageData)
                     print("[NowPlayingService] artwork saved (\(imageData.count) bytes)")
                     // Re-fetch now-playing info which will now have the artwork path
                     let (fetchedInfo, _) = self.fetchNowPlaying()
@@ -164,20 +151,8 @@ final class NowPlayingService {
         return output
         """
 
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/osascript")
-        process.arguments = ["-e", script]
-
-        let pipe = Pipe()
-        process.standardOutput = pipe
-
         do {
-            try process.run()
-            process.waitUntilExit()
-
-            let data = pipe.fileHandleForReading.readDataToEndOfFile()
-            let output = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-
+            let output = try appleScript.output(from: script)
             guard !output.isEmpty else { return (nil, nil) }
 
             let parts = output.components(separatedBy: "|||")
@@ -191,11 +166,8 @@ final class NowPlayingService {
                 if parts.count > 6 {
                     spotifyUri = parts[6]
                 }
-                let fm = FileManager.default
-                if fm.fileExists(atPath: self.artworkPath),
-                   let attrs = try? fm.attributesOfItem(atPath: self.artworkPath),
-                   (attrs[.size] as? Int ?? 0) > 100 {
-                    artworkPath = self.artworkPath
+                if artworkCache.hasArtwork {
+                    artworkPath = artworkCache.path
                 } else {
                     artworkPath = ""
                 }
@@ -222,5 +194,78 @@ final class NowPlayingService {
             trackTitle: "", artistName: "", albumTitle: "",
             duration: 0, elapsedTime: 0, isPlaying: false, artworkPath: ""
         ))
+    }
+}
+
+extension NowPlayingService: NowPlayingProviding {}
+
+private final class AppleScriptRunner {
+    func run(_ source: String) -> Bool {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/osascript")
+        process.arguments = ["-e", source]
+
+        do {
+            try process.run()
+            process.waitUntilExit()
+            return process.terminationStatus == 0
+        } catch {
+            return false
+        }
+    }
+
+    func output(from source: String) throws -> String {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/osascript")
+        process.arguments = ["-e", source]
+
+        let pipe = Pipe()
+        process.standardOutput = pipe
+
+        try process.run()
+        process.waitUntilExit()
+
+        let data = pipe.fileHandleForReading.readDataToEndOfFile()
+        return String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+    }
+}
+
+private final class SpotifyArtworkCache {
+    let path: String
+    private let fileManager: FileManager
+
+    init(path: String, fileManager: FileManager = .default) {
+        self.path = path
+        self.fileManager = fileManager
+    }
+
+    var hasArtwork: Bool {
+        fileManager.fileExists(atPath: path) &&
+            ((try? fileManager.attributesOfItem(atPath: path))?[.size] as? Int ?? 0) > 100
+    }
+
+    func clear() {
+        try? fileManager.removeItem(atPath: path)
+    }
+
+    func save(_ data: Data) {
+        try? data.write(to: URL(fileURLWithPath: path))
+    }
+
+    func fetchImageData(for trackId: String) throws -> Data? {
+        let trackUrl = "https://open.spotify.com/track/\(trackId)"
+        guard let encoded = trackUrl.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
+              let url = URL(string: "https://open.spotify.com/oembed?url=\(encoded)") else {
+            return nil
+        }
+
+        let data = try Data(contentsOf: url)
+        guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let imageUrlStr = json["thumbnail_url"] as? String,
+              let imageUrl = URL(string: imageUrlStr) else {
+            return nil
+        }
+
+        return try Data(contentsOf: imageUrl)
     }
 }

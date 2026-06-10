@@ -1,0 +1,648 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Resound - Dynamic Island for Mac Music</title>
+  <meta name="description" content="Resound adds a Dynamic Island-style music controller to your Mac's notch with now-playing info, artwork, transport controls, waveform visuals, and hotkeys.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;600;700;800&family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --ink: #f6f2e8;
+      --muted: #a9aa9f;
+      --dim: #6f746a;
+      --black: #050605;
+      --panel: #0b0e0b;
+      --panel-2: #111610;
+      --line: #273026;
+      --emerald: #16a36b;
+      --mint: #b8ffd9;
+      --amber: #e8c66b;
+      --radius: 8px;
+      --display: "Bricolage Grotesque", serif;
+      --body: "Sora", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      background: var(--black);
+      color: var(--ink);
+      font-family: var(--body);
+      line-height: 1.5;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: .18;
+      background-image:
+        linear-gradient(rgba(255,255,255,.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
+      background-size: 42px 42px;
+      mask-image: linear-gradient(to bottom, black, transparent 70%);
+    }
+
+    a { color: inherit; }
+
+    .page {
+      position: relative;
+      overflow: hidden;
+    }
+
+    .shell {
+      width: min(1160px, calc(100% - 40px));
+      margin: 0 auto;
+    }
+
+    .nav {
+      position: fixed;
+      z-index: 20;
+      top: 0;
+      left: 0;
+      right: 0;
+      border-bottom: 1px solid rgba(246,242,232,.08);
+      background: rgba(5,6,5,.78);
+      backdrop-filter: blur(18px);
+    }
+
+    .nav-inner {
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-family: var(--display);
+      font-weight: 800;
+      text-decoration: none;
+      font-size: 21px;
+    }
+
+    .brand-mark {
+      width: 34px;
+      height: 34px;
+      border: 1px solid rgba(246,242,232,.22);
+      border-radius: 7px;
+      background: #0c0c0c url("../DynamicIsland/scripts/Resound.svg") center / cover no-repeat;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 22px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .nav-links a {
+      text-decoration: none;
+    }
+
+    .nav-links a:hover { color: var(--ink); }
+
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      padding: 0 18px;
+      border-radius: 7px;
+      border: 1px solid rgba(184,255,217,.28);
+      background: var(--mint);
+      color: #06110b;
+      font-weight: 800;
+      text-decoration: none;
+      box-shadow: 0 20px 60px rgba(22,163,107,.18);
+      transition: transform .18s ease, box-shadow .18s ease;
+    }
+
+    .button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 24px 70px rgba(22,163,107,.28);
+    }
+
+    .button.secondary {
+      background: transparent;
+      color: var(--ink);
+      border-color: rgba(246,242,232,.18);
+      box-shadow: none;
+    }
+
+    .hero {
+      min-height: 94vh;
+      padding: 112px 0 64px;
+      display: grid;
+      align-items: end;
+    }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: .96fr 1.04fr;
+      gap: 54px;
+      align-items: center;
+    }
+
+    .eyebrow {
+      color: var(--mint);
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .14em;
+    }
+
+    h1, h2, h3 {
+      font-family: var(--display);
+      letter-spacing: 0;
+      line-height: .94;
+      margin: 0;
+    }
+
+    h1 {
+      margin-top: 18px;
+      max-width: 720px;
+      font-size: clamp(56px, 9vw, 126px);
+    }
+
+    .hero-copy {
+      margin: 26px 0 0;
+      max-width: 580px;
+      color: var(--muted);
+      font-size: clamp(17px, 2vw, 22px);
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 34px;
+    }
+
+    .note {
+      margin-top: 18px;
+      color: var(--dim);
+      font-size: 13px;
+    }
+
+    .stage {
+      position: relative;
+      min-height: 570px;
+      border: 1px solid rgba(246,242,232,.11);
+      background:
+        radial-gradient(circle at 50% 0%, rgba(22,163,107,.18), transparent 38%),
+        linear-gradient(180deg, #0c100d, #050605);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    .mac-menu {
+      height: 34px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 12px;
+      padding: 0 16px;
+      color: rgba(246,242,232,.52);
+      font-size: 11px;
+      border-bottom: 1px solid rgba(246,242,232,.08);
+      background: rgba(255,255,255,.03);
+    }
+
+    .island {
+      position: absolute;
+      top: 34px;
+      left: 50%;
+      width: min(72%, 386px);
+      height: 46px;
+      transform: translateX(-50%);
+      border: 1px solid rgba(246,242,232,.22);
+      border-top: 0;
+      border-radius: 0 0 18px 18px;
+      background: #010201;
+      box-shadow: 0 22px 70px rgba(0,0,0,.55);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 14px;
+    }
+
+    .cover {
+      width: 24px;
+      height: 24px;
+      border-radius: 6px;
+      background: linear-gradient(135deg, var(--amber), var(--emerald));
+    }
+
+    .bars {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      height: 28px;
+    }
+
+    .bars span {
+      width: 4px;
+      border-radius: 999px;
+      background: var(--ink);
+      opacity: .7;
+      animation: pulse 1.2s ease-in-out infinite alternate;
+    }
+
+    .bars span:nth-child(1) { height: 11px; }
+    .bars span:nth-child(2) { height: 23px; animation-delay: .12s; }
+    .bars span:nth-child(3) { height: 16px; animation-delay: .24s; }
+    .bars span:nth-child(4) { height: 26px; animation-delay: .36s; }
+    .bars span:nth-child(5) { height: 14px; animation-delay: .48s; }
+
+    @keyframes pulse {
+      to { transform: scaleY(.48); opacity: .38; }
+    }
+
+    .preview {
+      position: absolute;
+      left: 36px;
+      right: 36px;
+      bottom: 32px;
+      border-radius: var(--radius);
+      overflow: hidden;
+      border: 1px solid rgba(246,242,232,.14);
+      box-shadow: 0 30px 90px rgba(0,0,0,.42);
+    }
+
+    .preview img {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+
+    .section {
+      padding: 86px 0;
+      border-top: 1px solid rgba(246,242,232,.08);
+    }
+
+    .section-head {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
+      align-items: end;
+      margin-bottom: 34px;
+    }
+
+    h2 {
+      font-size: clamp(40px, 6vw, 82px);
+    }
+
+    .section-head p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 17px;
+    }
+
+    .features {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1px;
+      background: rgba(246,242,232,.11);
+      border: 1px solid rgba(246,242,232,.11);
+    }
+
+    .feature {
+      min-height: 218px;
+      padding: 24px;
+      background: var(--panel);
+    }
+
+    .feature:nth-child(even) { background: var(--panel-2); }
+
+    .feature h3 {
+      font-size: 28px;
+      line-height: 1;
+    }
+
+    .feature p {
+      color: var(--muted);
+      margin: 14px 0 0;
+      font-size: 14px;
+    }
+
+    .glyph {
+      width: 42px;
+      height: 42px;
+      margin-bottom: 34px;
+      border: 1px solid rgba(184,255,217,.28);
+      border-radius: 6px;
+      display: grid;
+      place-items: center;
+      color: var(--mint);
+      font-family: var(--display);
+      font-weight: 800;
+    }
+
+    .install {
+      display: grid;
+      grid-template-columns: .8fr 1.2fr;
+      gap: 28px;
+    }
+
+    .steps {
+      display: grid;
+      gap: 12px;
+      counter-reset: step;
+    }
+
+    .step {
+      counter-increment: step;
+      padding: 22px;
+      border: 1px solid rgba(246,242,232,.11);
+      border-radius: var(--radius);
+      background: var(--panel);
+    }
+
+    .step::before {
+      content: counter(step, decimal-leading-zero);
+      display: block;
+      color: var(--mint);
+      font-family: var(--display);
+      font-size: 24px;
+      font-weight: 800;
+      margin-bottom: 16px;
+    }
+
+    .step strong {
+      display: block;
+      font-family: var(--display);
+      font-size: 24px;
+      line-height: 1;
+    }
+
+    .step span {
+      display: block;
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .terminal {
+      align-self: stretch;
+      padding: 24px;
+      border-radius: var(--radius);
+      border: 1px solid rgba(184,255,217,.18);
+      background: #030403;
+      color: var(--mint);
+      font: 500 13px/1.8 ui-monospace, SFMono-Regular, Menlo, monospace;
+      overflow: auto;
+    }
+
+    .faq {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 14px;
+    }
+
+    details {
+      border: 1px solid rgba(246,242,232,.11);
+      border-radius: var(--radius);
+      background: var(--panel);
+      padding: 20px;
+    }
+
+    summary {
+      cursor: pointer;
+      font-weight: 800;
+      font-family: var(--display);
+      font-size: 22px;
+    }
+
+    details p {
+      color: var(--muted);
+      margin: 14px 0 0;
+      font-size: 14px;
+    }
+
+    .footer {
+      padding: 36px 0;
+      border-top: 1px solid rgba(246,242,232,.08);
+      color: var(--dim);
+      font-size: 13px;
+    }
+
+    .footer .shell {
+      display: flex;
+      justify-content: space-between;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    @media (max-width: 900px) {
+      .nav-links a:not(.button) { display: none; }
+      .hero-grid,
+      .section-head,
+      .install,
+      .faq {
+        grid-template-columns: 1fr;
+      }
+      .hero { padding-top: 96px; }
+      .stage { min-height: 470px; }
+      .features { grid-template-columns: 1fr 1fr; }
+    }
+
+    @media (max-width: 620px) {
+      .shell { width: min(100% - 28px, 1160px); }
+      .brand { font-size: 18px; }
+      .nav-inner { height: 58px; }
+      .button { min-height: 40px; padding: 0 13px; font-size: 13px; }
+      h1 { font-size: 58px; }
+      .hero-copy { font-size: 16px; }
+      .stage { min-height: 390px; }
+      .preview { left: 14px; right: 14px; bottom: 16px; }
+      .features { grid-template-columns: 1fr; }
+      .feature { min-height: 190px; }
+      .section { padding: 62px 0; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+        transition: none !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <nav class="nav" aria-label="Primary navigation">
+      <div class="shell nav-inner">
+        <a class="brand" href="#top" aria-label="Resound home">
+          <span class="brand-mark" aria-hidden="true"></span>
+          Resound
+        </a>
+        <div class="nav-links">
+          <a href="#features">Features</a>
+          <a href="#install">Install</a>
+          <a href="#faq">FAQ</a>
+          <a class="button" href="../DynamicIsland/Resound.dmg" download>Download</a>
+        </div>
+      </div>
+    </nav>
+
+    <main id="top">
+      <section class="hero">
+        <div class="shell hero-grid">
+          <div>
+            <div class="eyebrow">macOS music controller</div>
+            <h1>Your music, tucked into the notch.</h1>
+            <p class="hero-copy">Resound brings a Dynamic Island-style now-playing controller to Mac: artwork, waveform motion, playback controls, hotkeys, and a quiet menubar presence.</p>
+            <div class="hero-actions">
+              <a class="button" href="../DynamicIsland/Resound.dmg" download>Download Resound</a>
+              <a class="button secondary" href="https://github.com/ellaboevans/resound-dynamic-island">View source</a>
+            </div>
+            <p class="note">Requires macOS Sonoma or later. Works with Spotify and Apple Music.</p>
+          </div>
+
+          <div class="stage" aria-label="Resound product preview">
+            <div class="mac-menu">
+              <span>Wi-Fi</span>
+              <span>Sound</span>
+              <span>Resound</span>
+            </div>
+            <div class="island" aria-hidden="true">
+              <span class="cover"></span>
+              <span class="bars">
+                <span></span><span></span><span></span><span></span><span></span>
+              </span>
+            </div>
+            <figure class="preview">
+              <img src="../DynamicIsland/scripts/dmg-background.png" alt="Resound DMG preview showing the app icon and installation window">
+            </figure>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="features">
+        <div class="shell">
+          <div class="section-head">
+            <h2>A small app with a sharp job.</h2>
+            <p>Resound stays out of the dock and gives music controls a dedicated place at the top of the screen, close to where your attention already lands.</p>
+          </div>
+
+          <div class="features">
+            <article class="feature">
+              <div class="glyph">01</div>
+              <h3>Dynamic Island pill</h3>
+              <p>Collapsed now-playing state expands on hover into transport controls and track details.</p>
+            </article>
+            <article class="feature">
+              <div class="glyph">02</div>
+              <h3>Spotify and Music</h3>
+              <p>Reads playback state from Spotify and Apple Music using native macOS scripting hooks.</p>
+            </article>
+            <article class="feature">
+              <div class="glyph">03</div>
+              <h3>Artwork and progress</h3>
+              <p>Shows album art, elapsed time, remaining time, and an at-a-glance progress bar.</p>
+            </article>
+            <article class="feature">
+              <div class="glyph">04</div>
+              <h3>Waveform styles</h3>
+              <p>Choose between compact visualizers that make the pill feel alive without taking over.</p>
+            </article>
+            <article class="feature">
+              <div class="glyph">05</div>
+              <h3>Global hotkeys</h3>
+              <p>Bind play, pause, next, previous, and island toggle shortcuts from the settings panel.</p>
+            </article>
+            <article class="feature">
+              <div class="glyph">06</div>
+              <h3>Native menubar</h3>
+              <p>Quick controls live in a real macOS status menu with settings and quit always available.</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="install">
+        <div class="shell">
+          <div class="section-head">
+            <h2>Install in a minute.</h2>
+            <p>Download the DMG, move the app to Applications, and clear quarantine if macOS flags the unsigned build.</p>
+          </div>
+
+          <div class="install">
+            <div class="steps">
+              <div class="step">
+                <strong>Open the DMG</strong>
+                <span>Launch the downloaded installer and drag Resound into Applications.</span>
+              </div>
+              <div class="step">
+                <strong>Start Resound</strong>
+                <span>The app runs as a menubar utility and does not keep a dock icon around.</span>
+              </div>
+              <div class="step">
+                <strong>Allow the app</strong>
+                <span>If macOS blocks launch, remove the quarantine attribute from the installed app.</span>
+              </div>
+            </div>
+
+            <pre class="terminal"><code>sudo xattr -r -d com.apple.quarantine /Applications/Resound.app
+
+# Build from source
+git clone https://github.com/ellaboevans/resound-dynamic-island.git
+cd resound-dynamic-island
+make release</code></pre>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="faq">
+        <div class="shell">
+          <div class="section-head">
+            <h2>Questions before it lives in your menu bar.</h2>
+            <p>Resound is intentionally narrow: a fast Mac utility for music presence and control.</p>
+          </div>
+
+          <div class="faq">
+            <details open>
+              <summary>Does it require a notch?</summary>
+              <p>No. The island can still sit at the top of the screen on Macs without a notch.</p>
+            </details>
+            <details>
+              <summary>Which music apps work?</summary>
+              <p>Spotify and Apple Music are supported by the current app integration.</p>
+            </details>
+            <details>
+              <summary>Does it show in the dock?</summary>
+              <p>No. The release app is configured as a menubar utility with no dock icon.</p>
+            </details>
+            <details>
+              <summary>Can I change the position?</summary>
+              <p>Yes. Settings include left, center, and right placement plus adjustable notch width.</p>
+            </details>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div class="shell">
+        <span>Built by Evans Elabo.</span>
+        <span>Resound for macOS Sonoma and later.</span>
+      </div>
+    </footer>
+  </div>
+</body>
+</html>
