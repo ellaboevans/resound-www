@@ -7,7 +7,8 @@ let package = Package(
     targets: [
         .executableTarget(
             name: "Resound",
-            exclude: ["Info.plist"]
+            exclude: ["Info.plist"],
+            resources: [.copy("Resources/Resound.icns")]
         )
     ]
 )

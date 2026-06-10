@@ -4,6 +4,8 @@
 <dict>
     <key>LSUIElement</key>
     <true/>
+	<key>CFBundleIconFile</key>
+	<string>Resound</string>
 	<key>CFBundleExecutable</key>
 	<string>Resound</string>
 	<key>CFBundleName</key>

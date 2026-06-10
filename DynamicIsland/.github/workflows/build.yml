@@ -1,0 +1,63 @@
+name: Build Resound
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select Swift version
+        run: swift --version
+
+      - name: Build release
+        run: swift build -c release
+
+      - name: Bundle .app
+        run: |
+          mkdir -p Resound.app/Contents/MacOS Resound.app/Contents/Resources
+          cp .build/release/Resound Resound.app/Contents/MacOS/
+          cp Sources/Resound/Info.plist Resound.app/Contents/
+          cp Sources/Resound/Resources/Resound.icns Resound.app/Contents/Resources/
+          codesign --force --deep --sign - Resound.app
+
+      - name: Create DMG
+        run: |
+          mkdir -p dmg_staging
+          cp -R Resound.app dmg_staging/
+          ln -s /Applications dmg_staging/Applications
+          hdiutil create -volname "Resound" -srcfolder dmg_staging -ov -format UDZO Resound.dmg
+          rm -rf dmg_staging
+
+      - name: Upload DMG as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Resound-dmg
+          path: Resound.dmg
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download DMG
+        uses: actions/download-artifact@v4
+        with:
+          name: Resound-dmg
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: Resound.dmg
+          generate_release_notes: true

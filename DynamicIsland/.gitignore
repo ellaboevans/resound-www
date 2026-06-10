@@ -1,2 +1,5 @@
 .build/
 *.app
+*.dmg
+dmg_staging/
+.superpowers/
