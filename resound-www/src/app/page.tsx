@@ -93,6 +93,11 @@ const faqs = [
       "Spotify and Apple Music are supported by the current app integration.",
   },
   {
+    question: "Why does Resound ask to access Google Chrome?",
+    answer:
+      "Resound uses Chrome access to detect YouTube Music tabs, read the current track, and send playback controls. If you do not listen through YouTube Music in Chrome, you can deny the permission and keep using Spotify or Apple Music.",
+  },
+  {
     question: "Does it show in the dock?",
     answer:
       "No. The release app is configured as a menubar utility with no dock icon.",
