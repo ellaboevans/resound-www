@@ -6,29 +6,19 @@ struct PillView: View {
     @State private var isHovering = false
 
     var body: some View {
-        HStack(spacing: 10) {
+        HStack {
             if isPlaying {
-                albumArtIcon
-                trackLabel
+                waveform
+                    .opacity(0.6)
             } else {
-                HStack(spacing: 6) {
-                    Image(systemName: "music.note")
-                        .font(.system(size: 10, weight: .medium))
-                    Text("No Music Playing")
-                        .font(.system(size: 12, weight: .medium))
-                }
-                .opacity(0.4)
+                Image(systemName: "music.note")
+                    .font(.system(size: 12, weight: .medium))
+                    .opacity(0.4)
             }
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 6)
+        .frame(height: 38)
+        .frame(maxWidth: .infinity)
         .colorScheme(.dark)
-        .background(Capsule().fill(.ultraThinMaterial))
-        .overlay(
-            Capsule()
-                .stroke(Color.white.opacity(isHovering ? 0.15 : 0.06), lineWidth: 1)
-        )
-        .shadow(color: .black.opacity(0.3), radius: 12, y: 4)
         .brightness(isHovering ? 0.05 : 0)
         .scaleEffect(isHovering ? 1.03 : 1)
         .animation(.easeOut(duration: 0.15), value: isHovering)
@@ -39,28 +29,31 @@ struct PillView: View {
         }
     }
 
-    private var albumArtIcon: some View {
-        RoundedRectangle(cornerRadius: 6, style: .continuous)
-            .fill(
-                LinearGradient(
-                    colors: [.pink, .red],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-            )
-            .frame(width: 20, height: 20)
-            .overlay(
-                Image(systemName: "music.note")
-                    .font(.system(size: 9, weight: .bold))
-                    .foregroundColor(.white)
-            )
+    @ViewBuilder
+    private var waveform: some View {
+        PhaseAnimator([0, 1, 2, 1]) { phase in
+            HStack(spacing: 3) {
+                Capsule()
+                    .fill(.white)
+                    .frame(width: 3, height: 12 + barHeight(index: 0, phase: phase))
+                Capsule()
+                    .fill(.white)
+                    .frame(width: 3, height: 12 + barHeight(index: 1, phase: phase))
+                Capsule()
+                    .fill(.white)
+                    .frame(width: 3, height: 12 + barHeight(index: 2, phase: phase))
+            }
+        } animation: { phase in
+            .easeInOut(duration: 0.6)
+        }
     }
 
-    private var trackLabel: some View {
-        Text(trackTitle)
-            .font(.system(size: 12, weight: .medium))
-            .lineLimit(1)
-            .frame(maxWidth: 140, alignment: .leading)
-            .foregroundColor(.white)
+    private func barHeight(index: Int, phase: Int) -> CGFloat {
+        let heights: [[CGFloat]] = [
+            [0, 6, 2],
+            [6, 0, 4],
+            [2, 4, 0],
+        ]
+        return heights[index][phase % heights[index].count]
     }
 }

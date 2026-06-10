@@ -6,27 +6,35 @@ struct ContentView: View {
     @StateObject private var nowPlaying = NowPlayingViewModel()
 
     var body: some View {
-        VStack(spacing: 0) {
-            pillView
-                .zIndex(1)
-
-            if isExpanded {
+        ZStack(alignment: .top) {
+            VStack(spacing: -6) {
+                pillView
                 expandedPanel
-                    .transition(.identity)
-                    .offset(y: -6)
+                    .offset(y: isExpanded ? 0 : 151)
+                    .opacity(isExpanded ? 1 : 0)
+                    .animation(.spring(response: 0.25, dampingFraction: 1), value: isExpanded)
             }
+            .frame(width: 340, height: 189)
         }
-        .frame(width: 340)
+        .frame(width: 340, height: isExpanded ? 189 : 38, alignment: .top)
+        .clipped()
+        .background(
+            UnevenRoundedRectangle(
+                cornerRadii: .init(
+                    bottomLeading: 14,
+                    bottomTrailing: 14
+                ),
+                style: .continuous
+            )
+            .fill(.black)
+        )
+        .onHover { hovering in
+            guard !nowPlaying.trackTitle.isEmpty else { return }
+            isExpanded = hovering
+            onToggle(hovering)
+        }
         .onAppear { nowPlaying.start() }
         .onDisappear { nowPlaying.stop() }
-    }
-
-    private func toggleExpand() {
-        guard !nowPlaying.trackTitle.isEmpty else { return }
-        withAnimation(.spring(duration: 0.4, bounce: 0.08)) {
-            isExpanded.toggle()
-        }
-        onToggle(isExpanded)
     }
 
     private var pillView: some View {
@@ -34,8 +42,9 @@ struct ContentView: View {
             trackTitle: nowPlaying.trackTitle,
             isPlaying: nowPlaying.isPlaying
         )
-        .contentShape(Capsule())
-        .onTapGesture(perform: toggleExpand)
+        .transaction { t in
+            t.disablesAnimations = true
+        }
     }
 
     private var expandedPanel: some View {

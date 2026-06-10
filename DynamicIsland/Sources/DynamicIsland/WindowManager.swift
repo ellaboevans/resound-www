@@ -3,13 +3,16 @@ import SwiftUI
 
 final class WindowManager {
     private var window: NSWindow?
-    private var isExpanded = false
-    private let collapsedHeight: CGFloat = 40
-    private let expandedHeight: CGFloat = 210
+    private let collapsedHeight: CGFloat = 38
+    private let expandedHeight: CGFloat = 192
 
     func show() {
         let contentView = ContentView(onToggle: { [weak self] expanded in
-            self?.toggleExpanded(expanded)
+            if expanded {
+                self?.expand()
+            } else {
+                self?.collapse()
+            }
         })
 
         let hostingView = NSHostingView(rootView: contentView)
@@ -23,7 +26,8 @@ final class WindowManager {
         window.isOpaque = false
         window.backgroundColor = .clear
         window.hasShadow = false
-        window.level = .floating
+        window.level = .statusBar
+        window.appearance = NSAppearance(named: .darkAqua)
         window.ignoresMouseEvents = false
         window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
         window.contentView = hostingView
@@ -38,26 +42,30 @@ final class WindowManager {
     }
 
     private func positionWindow(_ window: NSWindow) {
-        guard let screen = NSScreen.main?.visibleFrame else { return }
+        guard let screen = NSScreen.main else { return }
         let width: CGFloat = 340
-        let y = screen.maxY - collapsedHeight - 8
-        let x = screen.midX - width / 2
+        let y = screen.frame.maxY - collapsedHeight
+        let x = screen.frame.midX - width / 2
         window.setFrame(NSRect(x: x, y: y, width: width, height: collapsedHeight), display: true)
         window.invalidateShadow()
     }
 
-    func toggleExpanded(_ expanded: Bool) {
-        isExpanded = expanded
-        guard let window = window, let screen = NSScreen.main?.visibleFrame else { return }
+    private func expand() {
+        guard let window = window, let screen = NSScreen.main else { return }
         let width: CGFloat = 340
-        let height = expanded ? expandedHeight : collapsedHeight
-        let y = screen.maxY - height - 8
-        let x = screen.midX - width / 2
+        let y = screen.frame.maxY - expandedHeight
+        let x = screen.frame.midX - width / 2
+        window.setFrame(NSRect(x: x, y: y, width: width, height: expandedHeight), display: true)
+        window.invalidateShadow()
+    }
 
-        NSAnimationContext.runAnimationGroup { context in
-            context.duration = expanded ? 0.4 : 0.2
-            context.timingFunction = CAMediaTimingFunction(controlPoints: 0.23, 1, 0.32, 1)
-            window.animator().setFrame(NSRect(x: x, y: y, width: width, height: height), display: true)
+    private func collapse() {
+        guard let window = window, let screen = NSScreen.main else { return }
+        let width: CGFloat = 340
+        let y = screen.frame.maxY - collapsedHeight
+        let x = screen.frame.midX - width / 2
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            window.setFrame(NSRect(x: x, y: y, width: width, height: self.collapsedHeight), display: true)
             window.invalidateShadow()
         }
     }
