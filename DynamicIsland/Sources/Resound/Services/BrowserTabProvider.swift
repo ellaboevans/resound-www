@@ -5,10 +5,10 @@ final class BrowserTabProvider {
     static let shared = BrowserTabProvider()
 
     private var timer: Timer?
-    private var stateTimer: Timer?
     private var lastVideoId: String?
     private(set) var lastInfo: NowPlayingInfo?
     private let artworkCache = BrowserArtworkCache(path: "/tmp/dynamic_island_browser_art.jpg")
+    private var oembedCache: [String: (title: String, artist: String)] = [:]
     let publisher = PassthroughSubject<NowPlayingInfo, Never>()
 
     struct NowPlayingInfo: Equatable {
@@ -26,18 +26,12 @@ final class BrowserTabProvider {
         timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
             self?.poll()
         }
-        stateTimer = Timer.scheduledTimer(withTimeInterval: 3.0, repeats: true) { [weak self] _ in
-            self?.pollPlaybackState()
-        }
         poll()
-        pollPlaybackState()
     }
 
     func stop() {
         timer?.invalidate()
         timer = nil
-        stateTimer?.invalidate()
-        stateTimer = nil
         lastVideoId = nil
         lastInfo = nil
     }
@@ -47,7 +41,7 @@ final class BrowserTabProvider {
         var chrome = Application("Google Chrome");
         var wins = [];
         try { wins = chrome.windows; } catch(e) { }
-        var out = [];
+        var result = "";
         for (var w = 0; w < wins.length; w++) {
             var tabs = [];
             try { tabs = wins[w].tabs; } catch(e) { }
@@ -56,10 +50,19 @@ final class BrowserTabProvider {
                 var name = ""; var url = "";
                 try { name = t.name(); } catch(e) {}
                 try { url = t.url(); } catch(e) {}
-                out.push(name + "|||" + url);
+                if (url.indexOf("music.youtube.com") >= 0) {
+                    var state = "";
+                    try {
+                        var js = "var v=document.querySelector('video');v?[v.currentTime,v.duration,v.ended?'paused':(!v.paused?'true':'false')].join('|||'):''";
+                        state = t.execute({javascript: js});
+                    } catch(e) { state = ""; }
+                    result = name + "|||" + url + "|||" + state;
+                    break;
+                }
             }
+            if (result) { break; }
         }
-        out.join("\\n");
+        result;
         """
 
         let process = Process()
@@ -71,118 +74,84 @@ final class BrowserTabProvider {
             try process.run()
             process.waitUntilExit()
             let data = pipe.fileHandleForReading.readDataToEndOfFile()
-            guard let output = String(data: data, encoding: .utf8) else { return }
-
-            let lines = output.components(separatedBy: "\n").filter { !$0.isEmpty }
-            var found = false
-            for line in lines {
-                let parts = line.components(separatedBy: "|||")
-                guard parts.count == 2 else { continue }
-                if let videoId = extractYouTubeMusicVideoId(title: parts[0], url: parts[1]) {
-                    found = true
-                    handleYouTubeVideo(videoId, title: parts[0])
-                    break
-                }
-            }
-
-            if !found, lastInfo != nil {
-                lastInfo = nil
-                lastVideoId = nil
-                DispatchQueue.main.async { [weak self] in
-                    self?.publisher.send(NowPlayingInfo(
-                        trackTitle: "", artistName: "", albumTitle: "",
-                        duration: 0, elapsedTime: 0, isPlaying: false, artworkPath: ""
-                    ))
-                }
-            }
-        } catch {}
-    }
-
-    private func extractYouTubeMusicVideoId(title: String, url: String) -> String? {
-        guard title.contains("YouTube Music") else { return nil }
-        guard let urlComponents = URLComponents(string: url),
-              urlComponents.host?.contains("music.youtube.com") == true else { return nil }
-        return urlComponents.queryItems?.first(where: { $0.name == "v" })?.value
-    }
-
-    private func pollPlaybackState() {
-        guard lastInfo != nil else { return }
-        let script = """
-        tell application "Google Chrome"
-            repeat with w in windows
-                repeat with t in tabs of w
-                    if URL of t contains "music.youtube.com" then
-                        set result to execute t javascript "var v=document.querySelector('video');v?v.currentTime+'|||'+v.duration+'|||'+(!v.paused):''"
-                        return result
-                    end if
-                end repeat
-            end repeat
-            return ""
-        end tell
-        """
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/osascript")
-        process.arguments = ["-e", script]
-        let pipe = Pipe()
-        process.standardOutput = pipe
-        do {
-            try process.run()
-            process.waitUntilExit()
-            let data = pipe.fileHandleForReading.readDataToEndOfFile()
             guard let output = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines),
-                  !output.isEmpty else { return }
-            let parts = output.components(separatedBy: "|||")
-            guard parts.count == 3,
-                  let currentTime = Double(parts[0]),
-                  let duration = Double(parts[1]),
-                  duration > 0 else { return }
-            let isPlaying = parts[2] == "true"
+                  !output.isEmpty else {
+                // No YouTube Music tab found
+                if lastInfo != nil {
+                    lastInfo = nil; lastVideoId = nil
+                    DispatchQueue.main.async { [weak self] in
+                        self?.publisher.send(NowPlayingInfo(trackTitle: "", artistName: "", albumTitle: "", duration: 0, elapsedTime: 0, isPlaying: false, artworkPath: ""))
+                    }
+                }
+                return
+            }
 
-            guard let current = lastInfo else { return }
-            let updated = NowPlayingInfo(
-                trackTitle: current.trackTitle, artistName: current.artistName,
-                albumTitle: current.albumTitle, duration: duration,
-                elapsedTime: currentTime, isPlaying: isPlaying,
-                artworkPath: current.artworkPath
-            )
-            if updated != current {
-                lastInfo = updated
+            let parts = output.components(separatedBy: "|||")
+            guard parts.count >= 2 else { return }
+            let title = parts[0]
+            let url = parts[1]
+            let stateStr = parts.count >= 5 ? parts[2] : ""
+            let durationStr = parts.count >= 5 ? parts[3] : ""
+            let playingStr = parts.count >= 5 ? parts[4] : ""
+
+            guard let urlComponents = URLComponents(string: url),
+                  urlComponents.host?.contains("music.youtube.com") == true,
+                  let videoId = urlComponents.queryItems?.first(where: { $0.name == "v" })?.value else { return }
+
+            let currentTime = TimeInterval(stateStr) ?? 0
+            let duration = TimeInterval(durationStr) ?? 0
+            let isPlaying = playingStr == "true"
+
+            handleYouTubeVideo(videoId: videoId, title: title, currentTime: currentTime, duration: duration, isPlaying: isPlaying)
+        } catch {
+            if lastInfo != nil {
+                lastInfo = nil; lastVideoId = nil
                 DispatchQueue.main.async { [weak self] in
-                    self?.publisher.send(updated)
+                    self?.publisher.send(NowPlayingInfo(trackTitle: "", artistName: "", albumTitle: "", duration: 0, elapsedTime: 0, isPlaying: false, artworkPath: ""))
                 }
             }
-        } catch {}
+        }
     }
 
-    private func handleYouTubeVideo(_ videoId: String, title: String) {
-        let isPlaying = !title.trimmingCharacters(in: .whitespaces).hasPrefix("YouTube Music")
-
+    private func handleYouTubeVideo(videoId: String, title: String, currentTime: TimeInterval, duration: TimeInterval, isPlaying: Bool) {
         if videoId != lastVideoId {
             lastVideoId = videoId
 
             let parsed = parseYouTubeTabTitle(title)
-            let info = NowPlayingInfo(
-                trackTitle: parsed.title, artistName: parsed.artist,
-                albumTitle: "", duration: 0, elapsedTime: 0,
-                isPlaying: isPlaying, artworkPath: ""
-            )
-            lastInfo = info
-            DispatchQueue.main.async { [weak self] in
-                self?.publisher.send(info)
-            }
-
-            DispatchQueue.global(qos: .utility).async { [weak self] in
-                self?.fetchYouTubeMetadata(videoId: videoId)
+            if let cached = oembedCache[videoId] {
+                let info = NowPlayingInfo(
+                    trackTitle: cached.title, artistName: cached.artist,
+                    albumTitle: "", duration: duration, elapsedTime: currentTime,
+                    isPlaying: isPlaying, artworkPath: artworkCache.path
+                )
+                lastInfo = info
+                DispatchQueue.main.async { [weak self] in
+                    self?.publisher.send(info)
+                }
+            } else {
+                let info = NowPlayingInfo(
+                    trackTitle: parsed.title, artistName: parsed.artist,
+                    albumTitle: "", duration: duration, elapsedTime: currentTime,
+                    isPlaying: isPlaying, artworkPath: ""
+                )
+                lastInfo = info
+                DispatchQueue.main.async { [weak self] in
+                    self?.publisher.send(info)
+                }
+                fetchYouTubeMetadata(videoId: videoId, title: title)
             }
             return
         }
 
         guard let current = lastInfo else { return }
-        if current.isPlaying != isPlaying {
+        let needsUpdate = current.isPlaying != isPlaying ||
+                          abs(current.elapsedTime - currentTime) > 1 ||
+                          abs(current.duration - duration) > 0.1
+        if needsUpdate {
             let updated = NowPlayingInfo(
                 trackTitle: current.trackTitle, artistName: current.artistName,
-                albumTitle: current.albumTitle, duration: current.duration,
-                elapsedTime: current.elapsedTime, isPlaying: isPlaying,
+                albumTitle: current.albumTitle, duration: duration,
+                elapsedTime: currentTime, isPlaying: isPlaying,
                 artworkPath: current.artworkPath
             )
             lastInfo = updated
@@ -192,21 +161,21 @@ final class BrowserTabProvider {
         }
     }
 
-    private func fetchYouTubeMetadata(videoId: String) {
+    private func fetchYouTubeMetadata(videoId: String, title: String) {
         guard let url = URL(string: "https://www.youtube.com/oembed?url=https://music.youtube.com/watch?v=\(videoId)&format=json") else { return }
         do {
             let data = try Data(contentsOf: url)
             guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] else { return }
             let oembedTitle = json["title"] as? String ?? ""
             let artist = json["author_name"] as? String ?? ""
+            oembedCache[videoId] = (oembedTitle, artist)
+
             var artworkPath = ""
             if let thumbUrlStr = json["thumbnail_url"] as? String,
                let thumbUrl = URL(string: thumbUrlStr),
                let imageData = try? Data(contentsOf: thumbUrl) {
                 artworkCache.save(imageData)
-                if artworkCache.hasArtwork {
-                    artworkPath = artworkCache.path
-                }
+                if artworkCache.hasArtwork { artworkPath = artworkCache.path }
             }
 
             let info = NowPlayingInfo(
