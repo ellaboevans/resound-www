@@ -12,8 +12,8 @@ if [ ! -d "$APP" ]; then
     exit 1
 fi
 
-echo "Removing quarantine attributes from Resound.app..."
-xattr -cr "$APP"
+echo "Removing quarantine flag (may ask for your password)..."
+sudo xattr -r -d com.apple.quarantine "$APP" 2>&1
 
 echo "Done! You can now open Resound from your Applications folder."
 echo

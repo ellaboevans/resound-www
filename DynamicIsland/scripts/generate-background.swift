@@ -109,14 +109,21 @@ let instrAttr: [NSAttributedString.Key: Any] = [
 let instrSize = (instruction as NSString).size(withAttributes: instrAttr)
 (instruction as NSString).draw(at: CGPoint(x: CGFloat(width) / 2 - instrSize.width / 2, y: CGFloat(height) - 50), withAttributes: instrAttr)
 
-// Gatekeeper note — hidden fix available
-let gkNote = "If macOS warns about an unidentified developer, run: xattr -cr /Applications/Resound.app"
+// Gatekeeper note
+let gkNote = "If macOS warns about an unidentified developer, run in Terminal:"
+let gkNote2 = "sudo xattr -r -d com.apple.quarantine /Applications/Resound.app"
 let gkAttr: [NSAttributedString.Key: Any] = [
     .font: NSFont.systemFont(ofSize: 9, weight: .regular),
     .foregroundColor: NSColor(white: 1, alpha: 0.35)
 ]
+let gkAttr2: [NSAttributedString.Key: Any] = [
+    .font: NSFont.monospacedSystemFont(ofSize: 9, weight: .regular),
+    .foregroundColor: NSColor(white: 1, alpha: 0.5)
+]
 let gkSize = (gkNote as NSString).size(withAttributes: gkAttr)
-(gkNote as NSString).draw(at: CGPoint(x: CGFloat(width) / 2 - gkSize.width / 2, y: 85), withAttributes: gkAttr)
+(gkNote as NSString).draw(at: CGPoint(x: CGFloat(width) / 2 - gkSize.width / 2, y: 105), withAttributes: gkAttr)
+let gkSize2 = (gkNote2 as NSString).size(withAttributes: gkAttr2)
+(gkNote2 as NSString).draw(at: CGPoint(x: CGFloat(width) / 2 - gkSize2.width / 2, y: 88), withAttributes: gkAttr2)
 
 // Builder credit at bottom center
 let credit = "Built by Evans Elabo"
