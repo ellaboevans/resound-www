@@ -86,8 +86,9 @@ final class NowPlayingService {
             guard let self = self else { return }
             guard let trackId = spotifyUri.components(separatedBy: ":").last else { return }
 
-            let oembedUrl = "https://open.spotify.com/oembed?url=spotify:track:\(trackId)"
-            guard let url = URL(string: oembedUrl) else { return }
+            let trackUrl = "https://open.spotify.com/track/\(trackId)"
+            guard let encoded = trackUrl.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
+                  let url = URL(string: "https://open.spotify.com/oembed?url=\(encoded)") else { return }
 
             do {
                 let data = try Data(contentsOf: url)
