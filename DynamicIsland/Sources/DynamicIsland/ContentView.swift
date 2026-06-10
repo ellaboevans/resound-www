@@ -41,7 +41,8 @@ struct ContentView: View {
         PillView(
             trackTitle: nowPlaying.trackTitle,
             isPlaying: nowPlaying.isPlaying,
-            artworkImage: nowPlaying.artworkImage
+            artworkImage: nowPlaying.artworkImage,
+            isExpanded: isExpanded
         )
         .transaction { t in
             t.disablesAnimations = true

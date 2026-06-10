@@ -4,6 +4,7 @@ struct PillView: View {
     let trackTitle: String
     let isPlaying: Bool
     let artworkImage: NSImage?
+    let isExpanded: Bool
     @State private var isHovering = false
 
     var body: some View {
@@ -25,7 +26,7 @@ struct PillView: View {
         .frame(maxWidth: .infinity)
         .colorScheme(.dark)
         .brightness(isHovering ? 0.05 : 0)
-        .scaleEffect(isHovering ? 1.03 : 1)
+        .scaleEffect(!isExpanded && isHovering ? 1.03 : 1)
         .animation(.easeOut(duration: 0.15), value: isHovering)
         .onHover { h in
             withAnimation(.easeOut(duration: 0.15)) {
