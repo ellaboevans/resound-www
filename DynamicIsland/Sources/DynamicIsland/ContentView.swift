@@ -16,7 +16,7 @@ struct ContentView: View {
             expandedPanel
                 .opacity(expandedOpacity)
         }
-        .frame(width: notchWidth, height: isExpanded ? 189 : 38, alignment: .top)
+        .frame(width: notchWidth, height: isExpanded ? 192 : 38, alignment: .top)
         .clipped()
         .background(
             UnevenRoundedRectangle(
@@ -31,11 +31,11 @@ struct ContentView: View {
         .onHover { hovering in
             collapseTask?.cancel()
             if hovering {
+                onToggle(true)
                 isExpanded = true
                 withAnimation(.easeInOut(duration: 0.2)) {
                     expandedOpacity = 1
                 }
-                onToggle(true)
             } else {
                 withAnimation(.easeInOut(duration: 0.2)) {
                     expandedOpacity = 0
