@@ -1,0 +1,70 @@
+<h2>Notch Pill — Refined</h2>
+<p class="subtitle">Three variations on the notch pill icon. All use the pure black + white aesthetic. Click your favorite.</p>
+
+<div class="cards">
+  <div class="card" data-choice="pill-bars" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <svg width="180" height="180" viewBox="0 0 180 180" xmlns="http://www.w3.org/2000/svg">
+        <rect width="180" height="180" rx="36" fill="#000"/>
+        <rect x="34" y="55" width="112" height="70" rx="24" fill="none" stroke="white" stroke-width="3.5"/>
+        <rect x="54" y="72" width="5" height="26" rx="2.5" fill="white" opacity="0.6"/>
+        <rect x="65" y="62" width="5" height="46" rx="2.5" fill="white"/>
+        <rect x="76" y="68" width="5" height="34" rx="2.5" fill="white" opacity="0.8"/>
+        <rect x="87" y="58" width="5" height="54" rx="2.5" fill="white"/>
+        <rect x="98" y="64" width="5" height="42" rx="2.5" fill="white" opacity="0.7"/>
+        <rect x="109" y="74" width="5" height="22" rx="2.5" fill="white" opacity="0.5"/>
+        <rect x="120" y="68" width="5" height="34" rx="2.5" fill="white" opacity="0.6"/>
+      </svg>
+    </div>
+    <div class="card-body">
+      <h3>Pill + Bars</h3>
+      <p>Classic waveform bars inside the notch pill outline. Matches the app's own waveform style.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="pill-filled" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <svg width="180" height="180" viewBox="0 0 180 180" xmlns="http://www.w3.org/2000/svg">
+        <rect width="180" height="180" rx="36" fill="#000"/>
+        <rect x="34" y="55" width="112" height="70" rx="24" fill="white"/>
+        <rect x="54" y="72" width="5" height="26" rx="2.5" fill="black" opacity="0.6"/>
+        <rect x="65" y="62" width="5" height="46" rx="2.5" fill="black"/>
+        <rect x="76" y="68" width="5" height="34" rx="2.5" fill="black" opacity="0.8"/>
+        <rect x="87" y="58" width="5" height="54" rx="2.5" fill="black"/>
+        <rect x="98" y="64" width="5" height="42" rx="2.5" fill="black" opacity="0.7"/>
+        <rect x="109" y="74" width="5" height="22" rx="2.5" fill="black" opacity="0.5"/>
+        <rect x="120" y="68" width="5" height="34" rx="2.5" fill="black" opacity="0.6"/>
+      </svg>
+    </div>
+    <div class="card-body">
+      <h3>Pill Filled</h3>
+      <p>Inverted — white pill with black waveform. Higher contrast, pops more on the dock.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="pill-gradient" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <svg width="180" height="180" viewBox="0 0 180 180" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="grad" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stop-color="#333"/>
+            <stop offset="100%" stop-color="#000"/>
+          </linearGradient>
+        </defs>
+        <rect width="180" height="180" rx="36" fill="url(#grad)"/>
+        <rect x="34" y="55" width="112" height="70" rx="24" fill="none" stroke="white" stroke-width="3.5"/>
+        <rect x="54" y="72" width="5" height="26" rx="2.5" fill="white" opacity="0.6"/>
+        <rect x="65" y="62" width="5" height="46" rx="2.5" fill="white"/>
+        <rect x="76" y="68" width="5" height="34" rx="2.5" fill="white" opacity="0.8"/>
+        <rect x="87" y="58" width="5" height="54" rx="2.5" fill="white"/>
+        <rect x="98" y="64" width="5" height="42" rx="2.5" fill="white" opacity="0.7"/>
+        <rect x="109" y="74" width="5" height="22" rx="2.5" fill="white" opacity="0.5"/>
+        <rect x="120" y="68" width="5" height="34" rx="2.5" fill="white" opacity="0.6"/>
+      </svg>
+    </div>
+    <div class="card-body">
+      <h3>Subtle Gradient</h3>
+      <p>Dark gradient background (black to dark gray) with white pill outline + waveform. Adds depth.</p>
+    </div>
+  </div>
+</div>

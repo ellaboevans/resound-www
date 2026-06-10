@@ -1,7 +1,7 @@
 import SwiftUI
 
 @main
-struct DynamicIslandApp: App {
+struct ResoundApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
 
     var body: some Scene {

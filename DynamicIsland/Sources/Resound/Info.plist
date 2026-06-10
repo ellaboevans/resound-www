@@ -5,11 +5,11 @@
     <key>LSUIElement</key>
     <true/>
 	<key>CFBundleExecutable</key>
-	<string>DynamicIsland</string>
+	<string>Resound</string>
 	<key>CFBundleName</key>
-	<string>DynamicIsland</string>
+	<string>Resound</string>
     <key>CFBundleIdentifier</key>
-    <string>com.dynamicisland.app</string>
+    <string>com.resound.app</string>
     <key>CFBundleVersion</key>
     <string>1</string>
     <key>CFBundleShortVersionString</key>

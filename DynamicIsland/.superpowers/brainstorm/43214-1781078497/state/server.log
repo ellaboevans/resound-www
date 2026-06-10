@@ -1,0 +1,5 @@
+{"type":"server-started","port":54967,"host":"127.0.0.1","url_host":"localhost","url":"http://localhost:54967","screen_dir":"/Users/user/Documents/dynamic-island/DynamicIsland/.superpowers/brainstorm/43214-1781078497/content","state_dir":"/Users/user/Documents/dynamic-island/DynamicIsland/.superpowers/brainstorm/43214-1781078497/state"}
+{"type":"screen-added","file":"/Users/user/Documents/dynamic-island/DynamicIsland/.superpowers/brainstorm/43214-1781078497/content/icon-concepts.html"}
+{"source":"user-event","type":"click","text":"Notch Pill\n      The actual notch shape with a waveform inside","choice":"notch-pill","id":null,"timestamp":1781079351566}
+{"type":"screen-added","file":"/Users/user/Documents/dynamic-island/DynamicIsland/.superpowers/brainstorm/43214-1781078497/content/icon-refined.html"}
+{"source":"user-event","type":"click","text":"Subtle Gradient\n      Dark gradient background (black to dark gray) with white pill outline + waveform. Adds depth.","choice":"pill-gradient","id":null,"timestamp":1781079413537}

@@ -2,11 +2,11 @@
 import PackageDescription
 
 let package = Package(
-    name: "DynamicIsland",
+    name: "Resound",
     platforms: [.macOS(.v14)],
     targets: [
         .executableTarget(
-            name: "DynamicIsland",
+            name: "Resound",
             exclude: ["Info.plist"]
         )
     ]
