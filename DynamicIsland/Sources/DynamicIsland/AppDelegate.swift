@@ -1,10 +1,16 @@
 import Cocoa
 
 class AppDelegate: NSObject, NSApplicationDelegate {
-    private var windowManager: WindowManager?
-
     func applicationDidFinishLaunching(_ notification: Notification) {
-        windowManager = WindowManager()
-        windowManager?.show()
+        NowPlayingViewModel.shared.start()
+        WindowManager.shared.show()
+        MenuBarManager.shared.setup()
+        HotkeyManager.shared.start {
+            WindowManager.shared.toggle()
+        }
+    }
+
+    func applicationWillTerminate(_ notification: Notification) {
+        HotkeyManager.shared.stop()
     }
 }

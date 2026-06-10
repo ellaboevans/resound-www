@@ -2,20 +2,22 @@ import Cocoa
 import SwiftUI
 
 final class WindowManager {
+    static let shared = WindowManager()
     private var window: NSWindow?
     private let collapsedHeight: CGFloat = 38
     private let expandedHeight: CGFloat = 192
+    private var isExpanded = false
+    private var collapseWorkItem: DispatchWorkItem?
+    private let settings = SettingsViewModel.shared
+    init() {}
 
     func show() {
         let contentView = ContentView(onToggle: { [weak self] expanded in
-            if expanded {
-                self?.expand()
-            } else {
-                self?.collapse()
-            }
+            if expanded { self?.expand() } else { self?.collapse() }
         })
 
         let hostingView = NSHostingView(rootView: contentView)
+        hostingView.sizingOptions = []
 
         let window = NSWindow(
             contentRect: .zero,
@@ -32,41 +34,49 @@ final class WindowManager {
         window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
         window.contentView = hostingView
 
-        positionWindow(window)
+        positionWindow(window, height: collapsedHeight)
         window.makeKeyAndOrderFront(nil)
         self.window = window
     }
 
-    deinit {
-        window?.close()
-    }
+    deinit { window?.close() }
 
-    private func positionWindow(_ window: NSWindow) {
-        guard let screen = NSScreen.main else { return }
-        let width: CGFloat = 340
-        let y = screen.frame.maxY - collapsedHeight
-        let x = screen.frame.midX - width / 2
-        window.setFrame(NSRect(x: x, y: y, width: width, height: collapsedHeight), display: true)
-        window.invalidateShadow()
+    func toggle() {
+        if isExpanded { collapse() } else { expand() }
     }
 
     private func expand() {
-        guard let window = window, let screen = NSScreen.main else { return }
-        let width: CGFloat = 340
-        let y = screen.frame.maxY - expandedHeight
-        let x = screen.frame.midX - width / 2
-        window.setFrame(NSRect(x: x, y: y, width: width, height: expandedHeight), display: true)
-        window.invalidateShadow()
+        collapseWorkItem?.cancel()
+        isExpanded = true
+        guard let window = window else { return }
+        positionWindow(window, height: expandedHeight)
     }
 
     private func collapse() {
-        guard let window = window, let screen = NSScreen.main else { return }
-        let width: CGFloat = 340
-        let y = screen.frame.maxY - collapsedHeight
-        let x = screen.frame.midX - width / 2
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            window.setFrame(NSRect(x: x, y: y, width: width, height: self.collapsedHeight), display: true)
-            window.invalidateShadow()
+        collapseWorkItem?.cancel()
+        let work = DispatchWorkItem { [weak self] in
+            guard let self, self.isExpanded else { return }
+            self.isExpanded = false
+            guard let window = self.window else { return }
+            self.positionWindow(window, height: self.collapsedHeight)
         }
+        collapseWorkItem = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5, execute: work)
+    }
+
+    private func positionWindow(_ window: NSWindow, height: CGFloat) {
+        guard let screen = NSScreen.main else { return }
+        let width = CGFloat(settings.notchWidth)
+        let x: CGFloat
+        switch settings.notchPosition {
+        case .left: x = screen.frame.minX + 8
+        case .center: x = screen.frame.midX - width / 2
+        case .right: x = screen.frame.maxX - width - 8
+        }
+        let y = screen.frame.maxY - height
+        let frame = NSRect(x: x, y: y, width: width, height: height)
+        if window.frame.equalTo(frame) { return }
+        window.setFrame(frame, display: true, animate: false)
+        window.invalidateShadow()
     }
 }

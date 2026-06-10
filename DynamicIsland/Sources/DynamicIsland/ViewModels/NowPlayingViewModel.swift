@@ -3,6 +3,8 @@ import SwiftUI
 
 @MainActor
 final class NowPlayingViewModel: ObservableObject {
+    static let shared = NowPlayingViewModel()
+
     @Published var trackTitle: String = ""
     @Published var artistName: String = ""
     @Published var albumTitle: String = ""
@@ -11,9 +13,10 @@ final class NowPlayingViewModel: ObservableObject {
     @Published var elapsedTime: TimeInterval = 0
     @Published var isPlaying: Bool = false
 
-    private let service = NowPlayingService()
+    private let service = NowPlayingService.shared
     private var cancellables = Set<AnyCancellable>()
     private var lastTrackTitle: String = ""
+    private var started = false
 
     private var trackStartDate: Date?
     private var elapsedAtStart: TimeInterval = 0
@@ -37,7 +40,8 @@ final class NowPlayingViewModel: ObservableObject {
     }
 
     func start() {
-        cancellables.removeAll()
+        guard !started else { return }
+        started = true
         service.publisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] info in
@@ -69,6 +73,7 @@ final class NowPlayingViewModel: ObservableObject {
         elapsedTimer?.invalidate()
         elapsedTimer = nil
         cancellables.removeAll()
+        started = false
     }
 
     func playPause() { service.playPause() }

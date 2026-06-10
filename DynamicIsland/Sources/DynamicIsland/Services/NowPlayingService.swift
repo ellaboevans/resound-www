@@ -2,6 +2,7 @@ import Foundation
 import Combine
 
 final class NowPlayingService {
+    static let shared = NowPlayingService()
     private let queue = DispatchQueue(label: "com.dynamicisland.applescript", qos: .utility)
     private let artworkPath = "/tmp/dynamic_island_art.jpg"
     private var lastSpotifyUri: String?

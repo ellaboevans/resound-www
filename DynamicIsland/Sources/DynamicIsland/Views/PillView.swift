@@ -5,6 +5,7 @@ struct PillView: View {
     let isPlaying: Bool
     let artworkImage: NSImage?
     let isExpanded: Bool
+    let waveformStyle: WaveformStyle
     @State private var isHovering = false
 
     var body: some View {
@@ -18,7 +19,8 @@ struct PillView: View {
                     .frame(width: 22, height: 22)
             }
             Spacer(minLength: 0)
-            waveform
+            WaveformPreview(style: waveformStyle, isPlaying: isPlaying)
+                .frame(width: 60, height: 28)
                 .opacity(isPlaying ? 0.6 : 0.15)
         }
         .padding(.horizontal, 10)
@@ -61,45 +63,5 @@ struct PillView: View {
         }
     }
 
-    @ViewBuilder
-    private var waveform: some View {
-        if isPlaying {
-            PhaseAnimator([0, 1, 2, 1]) { phase in
-                HStack(spacing: 3) {
-                    Capsule()
-                        .fill(.white)
-                        .frame(width: 3, height: 12 + barHeight(index: 0, phase: phase))
-                    Capsule()
-                        .fill(.white)
-                        .frame(width: 3, height: 12 + barHeight(index: 1, phase: phase))
-                    Capsule()
-                        .fill(.white)
-                        .frame(width: 3, height: 12 + barHeight(index: 2, phase: phase))
-                }
-            } animation: { phase in
-                .easeInOut(duration: 0.6)
-            }
-        } else {
-            HStack(spacing: 3) {
-                Capsule()
-                    .fill(.white.opacity(0.15))
-                    .frame(width: 3, height: 12)
-                Capsule()
-                    .fill(.white.opacity(0.15))
-                    .frame(width: 3, height: 14)
-                Capsule()
-                    .fill(.white.opacity(0.15))
-                    .frame(width: 3, height: 10)
-            }
-        }
-    }
 
-    private func barHeight(index: Int, phase: Int) -> CGFloat {
-        let heights: [[CGFloat]] = [
-            [0, 6, 2],
-            [6, 0, 4],
-            [2, 4, 0],
-        ]
-        return heights[index][phase % heights[index].count]
-    }
 }

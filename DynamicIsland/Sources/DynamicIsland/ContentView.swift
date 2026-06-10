@@ -3,7 +3,10 @@ import SwiftUI
 struct ContentView: View {
     let onToggle: (Bool) -> Void
     @State private var isExpanded = false
-    @StateObject private var nowPlaying = NowPlayingViewModel()
+    @ObservedObject private var nowPlaying = NowPlayingViewModel.shared
+    @ObservedObject private var settings = SettingsViewModel.shared
+
+    private var notchWidth: CGFloat { CGFloat(settings.notchWidth) }
 
     var body: some View {
         ZStack(alignment: .top) {
@@ -14,9 +17,9 @@ struct ContentView: View {
                     .opacity(isExpanded ? 1 : 0)
                     .animation(.spring(response: 0.25, dampingFraction: 1), value: isExpanded)
             }
-            .frame(width: 340, height: 189)
+            .frame(width: notchWidth, height: 189)
         }
-        .frame(width: 340, height: isExpanded ? 189 : 38, alignment: .top)
+        .frame(width: notchWidth, height: isExpanded ? 189 : 38, alignment: .top)
         .clipped()
         .background(
             UnevenRoundedRectangle(
@@ -29,12 +32,11 @@ struct ContentView: View {
             .fill(.black)
         )
         .onHover { hovering in
-            guard !nowPlaying.trackTitle.isEmpty else { return }
             isExpanded = hovering
             onToggle(hovering)
         }
-        .onAppear { nowPlaying.start() }
-        .onDisappear { nowPlaying.stop() }
+        .onAppear { NowPlayingViewModel.shared.start() }
+        .onDisappear { NowPlayingViewModel.shared.stop() }
     }
 
     private var pillView: some View {
@@ -42,7 +44,8 @@ struct ContentView: View {
             trackTitle: nowPlaying.trackTitle,
             isPlaying: nowPlaying.isPlaying,
             artworkImage: nowPlaying.artworkImage,
-            isExpanded: isExpanded
+            isExpanded: isExpanded,
+            waveformStyle: settings.waveformStyle
         )
         .transaction { t in
             t.disablesAnimations = true
