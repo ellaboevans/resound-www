@@ -20,10 +20,11 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
         )
         win.title = "Settings"
         win.level = .statusBar + 1
+        win.isReleasedWhenClosed = false
         win.delegate = self
-        let settingsHosting = NSHostingView(rootView: SettingsView())
-        settingsHosting.sizingOptions = []
-        win.contentView = settingsHosting
+        let hostingView = NSHostingView(rootView: SettingsView())
+        hostingView.sizingOptions = []
+        win.contentView = hostingView
         win.center()
         win.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
@@ -31,9 +32,6 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
     }
 
     func windowWillClose(_ notification: Notification) {
-    }
-
-    func windowDidBecomeKey(_ notification: Notification) {
-        NSApp.activate(ignoringOtherApps: false)
+        window = nil
     }
 }
