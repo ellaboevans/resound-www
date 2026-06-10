@@ -11,13 +11,13 @@ let ctx = NSGraphicsContext.current!.cgContext
 
 // Emerald green gradient background
 let colors = [
-    CGColor(red: 0.05, green: 0.37, blue: 0.24, alpha: 1),  // #0D5E3C emerald top
-    CGColor(red: 0.00, green: 0.10, blue: 0.05, alpha: 1),  // #001A0D deep green bottom
+    CGColor(red: 0.05, green: 0.37, blue: 0.24, alpha: 1),
+    CGColor(red: 0.00, green: 0.10, blue: 0.05, alpha: 1),
 ]
 let gradient = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: colors as CFArray, locations: [0, 1])!
 ctx.drawLinearGradient(gradient, start: CGPoint(x: 0, y: 0), end: CGPoint(x: 0, y: CGFloat(height)), options: [])
 
-// Subtle grid/dots pattern for texture
+// Subtle grid/dots pattern
 ctx.setFillColor(CGColor(red: 1, green: 1, blue: 1, alpha: 0.03))
 for x in stride(from: 30, to: width, by: 30) {
     for y in stride(from: 30, to: height, by: 30) {
@@ -25,105 +25,107 @@ for x in stride(from: 30, to: width, by: 30) {
     }
 }
 
-// App icon zone — left side (notch pill shape outline)
-let pillWidth: CGFloat = 120
-let pillHeight: CGFloat = 60
-let pillX: CGFloat = 140
-let pillY: CGFloat = 150
-let pillRadius: CGFloat = 14
+let iconY: CGFloat = 160
+let iconSize: CGFloat = 80
+let iconRadius: CGFloat = 14
 
 ctx.setStrokeColor(CGColor(red: 1, green: 1, blue: 1, alpha: 0.15))
 ctx.setLineWidth(2)
 ctx.setLineDash(phase: 0, lengths: [6, 4])
 
+// ─── Icon 1: Resound.app (notch pill) ───
+let p1x: CGFloat = 70
 let pillPath = CGMutablePath()
-pillPath.move(to: CGPoint(x: pillX + 4, y: pillY + pillHeight))
-pillPath.addLine(to: CGPoint(x: pillX + pillWidth - 4, y: pillY + pillHeight))
-pillPath.addArc(tangent1End: CGPoint(x: pillX + pillWidth, y: pillY + pillHeight),
-                tangent2End: CGPoint(x: pillX + pillWidth, y: pillY),
-                radius: pillRadius)
-pillPath.addLine(to: CGPoint(x: pillX + pillWidth, y: pillY + pillRadius))
-pillPath.addArc(tangent1End: CGPoint(x: pillX + pillWidth, y: pillY),
-                tangent2End: CGPoint(x: pillX + pillWidth - pillRadius, y: pillY),
-                radius: pillRadius)
-pillPath.addLine(to: CGPoint(x: pillX + pillRadius, y: pillY))
-pillPath.addArc(tangent1End: CGPoint(x: pillX, y: pillY),
-                tangent2End: CGPoint(x: pillX, y: pillY + pillRadius),
-                radius: pillRadius)
-pillPath.addLine(to: CGPoint(x: pillX, y: pillY + pillHeight - pillRadius))
-pillPath.addArc(tangent1End: CGPoint(x: pillX, y: pillY + pillHeight),
-                tangent2End: CGPoint(x: pillX + 4, y: pillY + pillHeight),
-                radius: pillRadius)
+pillPath.move(to: CGPoint(x: p1x + 4, y: iconY + iconSize))
+pillPath.addLine(to: CGPoint(x: p1x + iconSize - 4, y: iconY + iconSize))
+pillPath.addArc(tangent1End: CGPoint(x: p1x + iconSize, y: iconY + iconSize), tangent2End: CGPoint(x: p1x + iconSize, y: iconY), radius: iconRadius)
+pillPath.addLine(to: CGPoint(x: p1x + iconSize, y: iconY + iconRadius))
+pillPath.addArc(tangent1End: CGPoint(x: p1x + iconSize, y: iconY), tangent2End: CGPoint(x: p1x + iconSize - iconRadius, y: iconY), radius: iconRadius)
+pillPath.addLine(to: CGPoint(x: p1x + iconRadius, y: iconY))
+pillPath.addArc(tangent1End: CGPoint(x: p1x, y: iconY), tangent2End: CGPoint(x: p1x, y: iconY + iconRadius), radius: iconRadius)
+pillPath.addLine(to: CGPoint(x: p1x, y: iconY + iconSize - iconRadius))
+pillPath.addArc(tangent1End: CGPoint(x: p1x, y: iconY + iconSize), tangent2End: CGPoint(x: p1x + 4, y: iconY + iconSize), radius: iconRadius)
 pillPath.closeSubpath()
 ctx.addPath(pillPath)
 ctx.strokePath()
 
-// Applications icon zone — right side (folder outline)
-let folderWidth: CGFloat = 90
-let folderHeight: CGFloat = 72
-let folderX: CGFloat = 370
-let folderY: CGFloat = 144
-
-ctx.setStrokeColor(CGColor(red: 1, green: 1, blue: 1, alpha: 0.15))
-ctx.setLineWidth(2)
-ctx.setLineDash(phase: 0, lengths: [6, 4])
+// ─── Icon 2: Applications (folder) ───
+let p2x: CGFloat = 260
+let fw = iconSize * 0.75
+let fh = iconSize * 0.9
+let fx = p2x + (iconSize - fw) / 2
+let fy = iconY + (iconSize - fh) / 2
 
 let folderPath = CGMutablePath()
-folderPath.move(to: CGPoint(x: folderX, y: folderY + folderHeight))
-folderPath.addLine(to: CGPoint(x: folderX + folderWidth, y: folderY + folderHeight))
-folderPath.addLine(to: CGPoint(x: folderX + folderWidth, y: folderY + folderHeight * 0.35))
-folderPath.addLine(to: CGPoint(x: folderX + folderWidth * 0.55, y: folderY + folderHeight * 0.35))
-folderPath.addLine(to: CGPoint(x: folderX + folderWidth * 0.45, y: folderY + folderHeight * 0.2))
-folderPath.addLine(to: CGPoint(x: folderX + folderWidth * 0.1, y: folderY + folderHeight * 0.2))
+folderPath.move(to: CGPoint(x: fx, y: fy + fh))
+folderPath.addLine(to: CGPoint(x: fx + fw, y: fy + fh))
+folderPath.addLine(to: CGPoint(x: fx + fw, y: fy + fh * 0.35))
+folderPath.addLine(to: CGPoint(x: fx + fw * 0.55, y: fy + fh * 0.35))
+folderPath.addLine(to: CGPoint(x: fx + fw * 0.45, y: fy + fh * 0.2))
+folderPath.addLine(to: CGPoint(x: fx + fw * 0.1, y: fy + fh * 0.2))
 folderPath.closeSubpath()
 ctx.addPath(folderPath)
 ctx.strokePath()
 
-// Arrow connecting them
+// ─── Icon 3: Install Resound (rounded rect with play triangle) ───
+let p3x: CGFloat = 450
+let installRect = CGRect(x: p3x, y: iconY, width: iconSize, height: iconSize)
+let installPath = CGPath(roundedRect: installRect, cornerWidth: iconRadius, cornerHeight: iconRadius, transform: nil)
+ctx.addPath(installPath)
+ctx.strokePath()
+
+// Play triangle inside icon 3
+ctx.setFillColor(CGColor(red: 1, green: 1, blue: 1, alpha: 0.15))
+ctx.move(to: CGPoint(x: p3x + 28, y: iconY + 18))
+ctx.addLine(to: CGPoint(x: p3x + 28, y: iconY + iconSize - 18))
+ctx.addLine(to: CGPoint(x: p3x + iconSize - 22, y: iconY + iconSize / 2))
+ctx.closePath()
+ctx.fillPath()
+
+// ─── Arrows ───
 ctx.setStrokeColor(CGColor(red: 1, green: 1, blue: 1, alpha: 0.08))
 ctx.setLineWidth(1.5)
 ctx.setLineDash(phase: 0, lengths: [])
 
-let arrowStart = CGPoint(x: pillX + pillWidth + 20, y: pillY + pillHeight / 2)
-let arrowEnd = CGPoint(x: folderX - 20, y: folderY + folderHeight / 2)
+func drawArrow(from: CGPoint, to: CGPoint) {
+    ctx.move(to: from)
+    ctx.addLine(to: to)
+    ctx.strokePath()
+    let arrowLen: CGFloat = 8
+    let angle = atan2(to.y - from.y, to.x - from.x)
+    ctx.move(to: to)
+    ctx.addLine(to: CGPoint(x: to.x - arrowLen * cos(angle - 0.4), y: to.y - arrowLen * sin(angle - 0.4)))
+    ctx.move(to: to)
+    ctx.addLine(to: CGPoint(x: to.x - arrowLen * cos(angle + 0.4), y: to.y - arrowLen * sin(angle + 0.4)))
+    ctx.strokePath()
+}
 
-ctx.move(to: arrowStart)
-ctx.addLine(to: arrowEnd)
-ctx.strokePath()
+drawArrow(from: CGPoint(x: p1x + iconSize + 10, y: iconY + iconSize / 2),
+          to: CGPoint(x: p2x - 10, y: iconY + iconSize / 2))
 
-// Arrowhead
-let arrowLen: CGFloat = 8
-let angle = atan2(arrowEnd.y - arrowStart.y, arrowEnd.x - arrowStart.x)
-ctx.move(to: arrowEnd)
-ctx.addLine(to: CGPoint(x: arrowEnd.x - arrowLen * cos(angle - 0.4), y: arrowEnd.y - arrowLen * sin(angle - 0.4)))
-ctx.move(to: arrowEnd)
-ctx.addLine(to: CGPoint(x: arrowEnd.x - arrowLen * cos(angle + 0.4), y: arrowEnd.y - arrowLen * sin(angle + 0.4)))
-ctx.strokePath()
+drawArrow(from: CGPoint(x: p2x + iconSize + 10, y: iconY + iconSize / 2),
+          to: CGPoint(x: p3x - 10, y: iconY + iconSize / 2))
 
-// Instruction text at top — pure white
-let instruction = "Drag Resound to your Applications folder"
+// ─── Step labels above each icon ───
+let stepAttr: [NSAttributedString.Key: Any] = [
+    .font: NSFont.systemFont(ofSize: 9, weight: .semibold),
+    .foregroundColor: NSColor(white: 1, alpha: 0.4)
+]
+let steps = ["1", "2", "3"]
+let stepPositions: [CGFloat] = [p1x + iconSize / 2, p2x + iconSize / 2, p3x + iconSize / 2]
+for (i, step) in steps.enumerated() {
+    let size = (step as NSString).size(withAttributes: stepAttr)
+    (step as NSString).draw(at: CGPoint(x: stepPositions[i] - size.width / 2, y: iconY + iconSize + 12), withAttributes: stepAttr)
+}
+
+// Instruction text at top
+let instruction = "Drag Resound to Applications → double-click Install Resound"
 let instrAttr: [NSAttributedString.Key: Any] = [
     .font: NSFont.systemFont(ofSize: 13, weight: .regular),
     .foregroundColor: NSColor(white: 1, alpha: 0.8)
 ]
 let instrSize = (instruction as NSString).size(withAttributes: instrAttr)
 (instruction as NSString).draw(at: CGPoint(x: CGFloat(width) / 2 - instrSize.width / 2, y: CGFloat(height) - 50), withAttributes: instrAttr)
-
-// Gatekeeper note
-let gkNote = "If macOS warns about an unidentified developer, run in Terminal:"
-let gkNote2 = "sudo xattr -r -d com.apple.quarantine /Applications/Resound.app"
-let gkAttr: [NSAttributedString.Key: Any] = [
-    .font: NSFont.systemFont(ofSize: 9, weight: .regular),
-    .foregroundColor: NSColor(white: 1, alpha: 0.35)
-]
-let gkAttr2: [NSAttributedString.Key: Any] = [
-    .font: NSFont.monospacedSystemFont(ofSize: 9, weight: .regular),
-    .foregroundColor: NSColor(white: 1, alpha: 0.5)
-]
-let gkSize = (gkNote as NSString).size(withAttributes: gkAttr)
-(gkNote as NSString).draw(at: CGPoint(x: CGFloat(width) / 2 - gkSize.width / 2, y: 105), withAttributes: gkAttr)
-let gkSize2 = (gkNote2 as NSString).size(withAttributes: gkAttr2)
-(gkNote2 as NSString).draw(at: CGPoint(x: CGFloat(width) / 2 - gkSize2.width / 2, y: 88), withAttributes: gkAttr2)
 
 // Builder credit at bottom center
 let credit = "Built by Evans Elabo"
@@ -136,7 +138,6 @@ let creditSize = (credit as NSString).size(withAttributes: creditAttr)
 
 image.unlockFocus()
 
-// Save as PNG
 guard let tiffData = image.tiffRepresentation,
       let bitmap = NSBitmapImageRep(data: tiffData),
       let pngData = bitmap.representation(using: .png, properties: [:]) else {

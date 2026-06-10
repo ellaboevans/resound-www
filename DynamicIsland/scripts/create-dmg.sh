@@ -41,8 +41,15 @@ rm -rf "$STAGING_DIR" "$FINAL_DMG"
 mkdir -p "$STAGING_DIR"
 cp -R "$APP_PATH" "$STAGING_DIR/"
 cp "$ICON_PATH" "$STAGING_DIR/.VolumeIcon.icns" 2>/dev/null || true
-cp "${SCRIPT_DIR}/Fix Security.command" "$STAGING_DIR/.Fix Security.command"
-chmod +x "$STAGING_DIR/.Fix Security.command"
+cp "${SCRIPT_DIR}/Install Resound.command" "$STAGING_DIR/"
+chmod +x "$STAGING_DIR/Install Resound.command"
+
+# Stamp the Resound icon on the install script
+if ! command -v fileicon &>/dev/null; then
+    echo "Installing fileicon..."
+    brew install fileicon >/dev/null 2>&1
+fi
+fileicon set "$STAGING_DIR/Install Resound.command" "$ICON_PATH" 2>/dev/null
 
 # ─── Build DMG with create-dmg ──────────────────────────────────────
 echo "Building DMG..."
@@ -52,9 +59,10 @@ create-dmg \
     --background "$BACKGROUND" \
     --window-pos 200 120 \
     --window-size 600 400 \
-    --icon-size 96 \
-    --icon "$APP_NAME.app" 150 200 \
-    --app-drop-link 450 200 \
+    --icon-size 80 \
+    --icon "$APP_NAME.app" 110 200 \
+    --app-drop-link 300 200 \
+    --icon "Install Resound.command" 490 200 \
     --hide-extension "$APP_NAME.app" \
     --format UDZO \
     --no-internet-enable \
