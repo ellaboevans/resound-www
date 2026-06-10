@@ -22,3 +22,7 @@ icon:
 
 clean:
 	rm -rf .build Resound.app dmg_staging Resound.dmg
+
+www: dmg
+	cp Resound.dmg ../resound-www/public/resound/Resound.dmg
+	@echo "→ Copied Resound.dmg to ../resound-www/public/resound/"

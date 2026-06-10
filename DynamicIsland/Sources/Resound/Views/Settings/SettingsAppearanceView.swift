@@ -23,6 +23,23 @@ struct SettingsAppearanceView: View {
                 }
             }
 
+            Picker("Display", selection: Binding(
+                get: { settings.displayMode },
+                set: { settings.displayMode = $0 }
+            )) {
+                ForEach(DisplayMode.allCases, id: \.self) { mode in
+                    Text(mode.rawValue).tag(mode)
+                }
+            }
+
+            if settings.displayMode == .singleScreen {
+                Picker("Screen", selection: $settings.selectedScreenName) {
+                    ForEach(NSScreen.screens, id: \.localizedName) { screen in
+                        Text(screen.localizedName).tag(screen.localizedName)
+                    }
+                }
+            }
+
             Section {
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 100))]) {
                     ForEach(WaveformStyle.allCases, id: \.self) { style in

@@ -4,10 +4,9 @@ import Combine
 
 final class WindowManager {
     static let shared = WindowManager()
-    private var window: NSWindow?
+    private var windows: [String: NSWindow] = [:]
     private let collapsedHeight: CGFloat = 38
     private let expandedHeight: CGFloat = 192
-    private var isExpanded = false
     private var collapseWorkItem: DispatchWorkItem?
     private let settings = SettingsViewModel.shared
     private var isResizing = false
@@ -16,13 +15,79 @@ final class WindowManager {
     init() {}
 
     func show() {
-        if let existing = window, existing.isVisible {
-            existing.makeKeyAndOrderFront(nil)
-            return
+        rebuildWindows()
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(screenConfigurationChanged),
+            name: NSApplication.didChangeScreenParametersNotification,
+            object: nil
+        )
+
+        settings.objectWillChange
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.rebuildWindows()
+            }
+            .store(in: &cancellables)
+    }
+
+    deinit {
+        for win in windows.values { win.close() }
+        NotificationCenter.default.removeObserver(self)
+    }
+
+    func toggle() {
+        if windows.values.contains(where: { $0.isVisible }) {
+            for win in windows.values { win.orderOut(nil) }
+        } else {
+            for win in windows.values { win.makeKeyAndOrderFront(nil) }
+        }
+    }
+
+    @objc private func screenConfigurationChanged() {
+        rebuildWindows()
+    }
+
+    private func rebuildWindows() {
+        let targetScreens = resolveTargetScreens()
+        let targetNames = Set(targetScreens.map(\.localizedName))
+
+        for (name, win) in windows where !targetNames.contains(name) {
+            win.close()
+            windows.removeValue(forKey: name)
         }
 
+        for screen in targetScreens {
+            if let existing = windows[screen.localizedName] {
+                positionWindow(existing, on: screen, height: existing.frame.height)
+            } else {
+                let win = makeWindow(for: screen)
+                windows[screen.localizedName] = win
+            }
+        }
+    }
+
+    private func resolveTargetScreens() -> [NSScreen] {
+        switch settings.displayMode {
+        case .allScreens:
+            return NSScreen.screens
+        case .singleScreen:
+            if let matched = NSScreen.screens.first(where: { $0.localizedName == settings.selectedScreenName }) {
+                return [matched]
+            }
+            return NSScreen.screens.first.map { [$0] } ?? []
+        }
+    }
+
+    private func makeWindow(for screen: NSScreen) -> NSWindow {
+        let screenName = screen.localizedName
         let contentView = ContentView(onToggle: { [weak self] expanded in
-            if expanded { self?.expand() } else { self?.collapse() }
+            guard let self, let win = self.windows[screenName] else { return }
+            if expanded {
+                self.expand(win, on: screen)
+            } else {
+                self.collapse(win, on: screen)
+            }
         })
 
         let hostingView = NSHostingView(rootView: contentView)
@@ -43,54 +108,33 @@ final class WindowManager {
         window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
         window.contentView = hostingView
 
-        positionWindow(window, height: collapsedHeight)
+        positionWindow(window, on: screen, height: collapsedHeight)
         window.makeKeyAndOrderFront(nil)
-        self.window = window
-
-        settings.objectWillChange
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                guard let self, let window = self.window else { return }
-                let height = self.isExpanded ? self.expandedHeight : self.collapsedHeight
-                self.positionWindow(window, height: height)
-            }
-            .store(in: &cancellables)
+        return window
     }
 
-    deinit { window?.close() }
-
-    func toggle() {
-        if isExpanded { collapse() } else { expand() }
-    }
-
-    private func expand() {
+    private func expand(_ window: NSWindow, on screen: NSScreen) {
         collapseWorkItem?.cancel()
-        guard !isExpanded else { return }
-        isExpanded = true
-        guard let window = window else { return }
-        positionWindow(window, height: expandedHeight)
+        positionWindow(window, on: screen, height: expandedHeight)
     }
 
-    private func collapse() {
+    private func collapse(_ window: NSWindow, on screen: NSScreen) {
         collapseWorkItem?.cancel()
         let work = DispatchWorkItem { [weak self] in
-            guard let self, self.isExpanded else { return }
-            self.isExpanded = false
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { [weak self] in
-                guard let self, let window = self.window else { return }
-                self.positionWindow(window, height: self.collapsedHeight)
+                guard let self else { return }
+                self.positionWindow(window, on: screen, height: self.collapsedHeight)
             }
         }
         collapseWorkItem = work
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5, execute: work)
     }
 
-    private func positionWindow(_ window: NSWindow, height: CGFloat) {
+    private func positionWindow(_ window: NSWindow, on screen: NSScreen, height: CGFloat) {
         guard !isResizing else { return }
         isResizing = true
         defer { isResizing = false }
 
-        guard let screen = NSScreen.main else { return }
         let width = CGFloat(settings.notchWidth)
         let x: CGFloat
         switch settings.notchPosition {

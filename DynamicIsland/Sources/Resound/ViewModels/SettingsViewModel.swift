@@ -11,14 +11,8 @@ final class SettingsViewModel: ObservableObject {
     @AppStorage("notchPosition") var notchPositionRaw = NotchPosition.center.rawValue
     @AppStorage("waveformStyle") var waveformStyleRaw = WaveformStyle.classic.rawValue
 
-    @AppStorage("playPauseKeyCode") var playPauseKeyCode: Double = 0
-    @AppStorage("playPauseFlags") var playPauseFlags: Double = 0
-    @AppStorage("nextTrackKeyCode") var nextTrackKeyCode: Double = 0
-    @AppStorage("nextTrackFlags") var nextTrackFlags: Double = 0
-    @AppStorage("previousTrackKeyCode") var previousTrackKeyCode: Double = 0
-    @AppStorage("previousTrackFlags") var previousTrackFlags: Double = 0
-    @AppStorage("toggleIslandKeyCode") var toggleIslandKeyCode: Double = 0
-    @AppStorage("toggleIslandFlags") var toggleIslandFlags: Double = 0
+    @AppStorage("displayMode") var displayModeRaw = DisplayMode.allScreens.rawValue
+    @AppStorage("selectedScreen") private var selectedScreenNameRaw = ""
 
     var musicSource: MusicSource {
         get { MusicSource(rawValue: musicSourceRaw) ?? .automatic }
@@ -35,23 +29,23 @@ final class SettingsViewModel: ObservableObject {
         set { waveformStyleRaw = newValue.rawValue }
     }
 
-    var playPauseBinding: HotkeyBinding {
-        get { .init(keyCode: UInt16(playPauseKeyCode), flags: UInt(playPauseFlags)) }
-        set { playPauseKeyCode = Double(newValue.keyCode); playPauseFlags = Double(newValue.flags) }
+    var displayMode: DisplayMode {
+        get { DisplayMode(rawValue: displayModeRaw) ?? .allScreens }
+        set {
+            displayModeRaw = newValue.rawValue
+            if newValue == .singleScreen && selectedScreenNameRaw.isEmpty {
+                selectedScreenNameRaw = NSScreen.main?.localizedName ?? ""
+            }
+        }
     }
 
-    var nextTrackBinding: HotkeyBinding {
-        get { .init(keyCode: UInt16(nextTrackKeyCode), flags: UInt(nextTrackFlags)) }
-        set { nextTrackKeyCode = Double(newValue.keyCode); nextTrackFlags = Double(newValue.flags) }
-    }
-
-    var previousTrackBinding: HotkeyBinding {
-        get { .init(keyCode: UInt16(previousTrackKeyCode), flags: UInt(previousTrackFlags)) }
-        set { previousTrackKeyCode = Double(newValue.keyCode); previousTrackFlags = Double(newValue.flags) }
-    }
-
-    var toggleIslandBinding: HotkeyBinding {
-        get { .init(keyCode: UInt16(toggleIslandKeyCode), flags: UInt(toggleIslandFlags)) }
-        set { toggleIslandKeyCode = Double(newValue.keyCode); toggleIslandFlags = Double(newValue.flags) }
+    var selectedScreenName: String {
+        get {
+            if selectedScreenNameRaw.isEmpty {
+                return NSScreen.main?.localizedName ?? ""
+            }
+            return selectedScreenNameRaw
+        }
+        set { selectedScreenNameRaw = newValue }
     }
 }

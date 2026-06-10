@@ -28,6 +28,7 @@ final class NowPlayingService {
     private var lastSpotifyUri: String?
     private var lastNotificationDate = Date.distantPast
     private var fallbackTimer: Timer?
+    private var cancellables = Set<AnyCancellable>()
     let publisher = PassthroughSubject<NowPlayingInfo, Never>()
 
     func startMonitoring() {
@@ -43,6 +44,44 @@ final class NowPlayingService {
             name: NSNotification.Name("com.apple.Music.playerInfo"),
             object: nil
         )
+
+        MediaRemoteProvider.shared.publisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] remoteInfo in
+                guard let self else { return }
+                let isMusicApp = remoteInfo.sourceApp == "com.spotify.client" || remoteInfo.sourceApp == "com.apple.Music"
+                if !isMusicApp {
+                    self.publisher.send(NowPlayingInfo(
+                        trackTitle: remoteInfo.trackTitle,
+                        artistName: remoteInfo.artistName,
+                        albumTitle: remoteInfo.albumTitle,
+                        duration: remoteInfo.duration,
+                        elapsedTime: remoteInfo.elapsedTime,
+                        isPlaying: remoteInfo.isPlaying,
+                        artworkPath: ""
+                    ))
+                }
+            }
+            .store(in: &cancellables)
+
+        BrowserTabProvider.shared.publisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] browserInfo in
+                guard let self else { return }
+                self.publisher.send(NowPlayingInfo(
+                    trackTitle: browserInfo.trackTitle,
+                    artistName: browserInfo.artistName,
+                    albumTitle: browserInfo.albumTitle,
+                    duration: browserInfo.duration,
+                    elapsedTime: browserInfo.elapsedTime,
+                    isPlaying: browserInfo.isPlaying,
+                    artworkPath: browserInfo.artworkPath
+                ))
+            }
+            .store(in: &cancellables)
+
+        MediaRemoteProvider.shared.start()
+        BrowserTabProvider.shared.start()
 
         pollNowPlaying()
 
@@ -61,13 +100,54 @@ final class NowPlayingService {
 
     func stopMonitoring() {
         DistributedNotificationCenter.default().removeObserver(self)
+        MediaRemoteProvider.shared.stop()
+        BrowserTabProvider.shared.stop()
         fallbackTimer?.invalidate()
         fallbackTimer = nil
+        cancellables.removeAll()
     }
 
-    func playPause() { runAppleScript("tell application \"Spotify\" to playpause") }
-    func nextTrack() { runAppleScript("tell application \"Spotify\" to next track") }
-    func previousTrack() { runAppleScript("tell application \"Spotify\" to previous track") }
+    func playPause() {
+        if isAppRunning("Spotify") { runAppleScript("tell application \"Spotify\" to playpause"); return }
+        if isAppRunning("Music") { runAppleScript("tell application \"Music\" to playpause"); return }
+        chromeMediaCommand("document.querySelector('[aria-label=\"Play\"], [aria-label=\"Pause\"]')?.click()")
+    }
+
+    func nextTrack() {
+        if isAppRunning("Spotify") { runAppleScript("tell application \"Spotify\" to next track"); return }
+        if isAppRunning("Music") { runAppleScript("tell application \"Music\" to next track"); return }
+        chromeMediaCommand("document.querySelector('[aria-label=\"Next\"]')?.click()")
+    }
+
+    func previousTrack() {
+        if isAppRunning("Spotify") { runAppleScript("tell application \"Spotify\" to previous track"); return }
+        if isAppRunning("Music") { runAppleScript("tell application \"Music\" to previous track"); return }
+        chromeMediaCommand("document.querySelector('[aria-label=\"Previous\"]')?.click()")
+    }
+
+    private func isAppRunning(_ name: String) -> Bool {
+        let script = "tell application \"System Events\" to exists (process \"\(name)\")"
+        return (try? appleScript.output(from: script)) == "true"
+    }
+
+    private func chromeMediaCommand(_ js: String) {
+        let escaped = js.replacingOccurrences(of: "\\", with: "\\\\").replacingOccurrences(of: "\"", with: "\\\"")
+        let script = """
+        tell application "Google Chrome"
+            repeat with w in windows
+                repeat with t in tabs of w
+                    if URL of t contains "music.youtube.com" then
+                        tell t to execute javascript "\(escaped)"
+                        return
+                    end if
+                end repeat
+            end repeat
+        end tell
+        """
+        queue.async { [weak self] in
+            _ = self?.appleScript.run(script)
+        }
+    }
 
     private func pollNowPlaying() {
         queue.async { [weak self] in
@@ -90,7 +170,9 @@ final class NowPlayingService {
                 DispatchQueue.main.async { self.publisher.send(info) }
             } else {
                 self.lastSpotifyUri = nil
-                DispatchQueue.main.async { self.sendEmpty() }
+                if MediaRemoteProvider.shared.lastInfo == nil && BrowserTabProvider.shared.lastInfo == nil {
+                    DispatchQueue.main.async { self.sendEmpty() }
+                }
             }
         }
     }
@@ -109,7 +191,6 @@ final class NowPlayingService {
             do {
                 if let imageData = try self.artworkCache.fetchImageData(for: trackId) {
                     self.artworkCache.save(imageData)
-                    print("[NowPlayingService] artwork saved (\(imageData.count) bytes)")
                     // Re-fetch now-playing info which will now have the artwork path
                     let (fetchedInfo, _) = self.fetchNowPlaying()
                     if let info = fetchedInfo {
