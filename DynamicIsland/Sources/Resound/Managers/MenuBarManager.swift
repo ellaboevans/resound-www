@@ -1,82 +1,81 @@
 import SwiftUI
 import AppKit
+import OSLog
 
 @MainActor
-final class MenuBarManager: NSObject, NSMenuDelegate {
+final class MenuBarManager: NSObject, NSPopoverDelegate {
     static let shared = MenuBarManager()
 
-    private let statusItem: NSStatusItem
-    private let menu = NSMenu()
+    private let logger = Logger(subsystem: "com.resound.app", category: "MenuBar")
+    private var statusItem: NSStatusItem!
+    private let popover = NSPopover()
 
     private override init() {
-        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         super.init()
-
-        if let button = statusItem.button {
-            button.image = NSImage(systemSymbolName: "music.note", accessibilityDescription: "Now Playing")
-            button.image?.isTemplate = true
-        }
-
-        menu.delegate = self
-        statusItem.menu = menu
+        popover.behavior = .transient
+        popover.delegate = self
     }
 
     func setup() {
-        rebuildMenu()
+        logger.info("Setting up status item")
+        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+
+        if let button = statusItem.button {
+            button.image = Self.loadIcon()
+            button.action = #selector(togglePopover)
+            button.target = self
+        }
     }
 
-    func menuWillOpen(_ menu: NSMenu) {
-        rebuildMenu()
+    @objc private func togglePopover() {
+        guard let button = statusItem.button else { return }
+
+        if popover.isShown {
+            popover.performClose(nil)
+        } else {
+            let contentView = MenuBarPopoverView()
+            popover.contentViewController = NSHostingController(rootView: contentView)
+            popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+            popover.contentViewController?.view.window?.makeKey()
+        }
     }
 
-    private func rebuildMenu() {
-        let nowPlaying = NowPlayingViewModel.shared
-        menu.removeAllItems()
-
-        let title = nowPlaying.trackTitle.isEmpty ? "No track playing" : nowPlaying.trackTitle
-        let artist = nowPlaying.artistName.isEmpty ? "No artist" : nowPlaying.artistName
-
-        let nowPlayingItem = NSMenuItem(title: title, action: nil, keyEquivalent: "")
-        nowPlayingItem.isEnabled = false
-        menu.addItem(nowPlayingItem)
-
-        let artistItem = NSMenuItem(title: artist, action: nil, keyEquivalent: "")
-        artistItem.isEnabled = false
-        menu.addItem(artistItem)
-
-        menu.addItem(.separator())
-        addItem("Previous", action: #selector(previousTrack))
-        addItem(nowPlaying.isPlaying ? "Pause" : "Play", action: #selector(playPause))
-        addItem("Next", action: #selector(nextTrack))
-        menu.addItem(.separator())
-        addItem("Settings...", action: #selector(openSettings))
-        addItem("Quit Resound", action: #selector(quit))
+    func popoverDidClose(_ notification: Notification) {
+        logger.info("Popover did close")
     }
 
-    private func addItem(_ title: String, action: Selector) {
-        let item = NSMenuItem(title: title, action: action, keyEquivalent: "")
-        item.target = self
-        menu.addItem(item)
-    }
+    private static func loadIcon() -> NSImage? {
+        if let iconPath = Bundle.main.path(forResource: "Resound", ofType: "icns"),
+           let icon = NSImage(contentsOfFile: iconPath) {
+            let resized = NSImage(size: NSSize(width: 18, height: 18))
+            resized.lockFocus()
+            icon.draw(in: NSRect(origin: .zero, size: NSSize(width: 18, height: 18)))
+            resized.unlockFocus()
+            return resized
+        }
 
-    @objc private func previousTrack() {
-        NowPlayingViewModel.shared.previousTrack()
+        let fallback = NSImage(systemSymbolName: "music.note", accessibilityDescription: "Resound Menu")
+        fallback?.isTemplate = true
+        return fallback
     }
+}
 
-    @objc private func playPause() {
-        NowPlayingViewModel.shared.playPause()
-    }
+struct TransportButton: View {
+    let systemName: String
+    var fontSize: Font = .title3
+    let action: () -> Void
+    @State private var isHovered = false
 
-    @objc private func nextTrack() {
-        NowPlayingViewModel.shared.nextTrack()
-    }
-
-    @objc private func openSettings() {
-        SettingsWindowController.shared.open()
-    }
-
-    @objc private func quit() {
-        NSApplication.shared.terminate(nil)
+    var body: some View {
+        Image(systemName: systemName)
+            .font(fontSize)
+            .foregroundStyle(.primary)
+            .padding(6)
+            .background(isHovered ? Color.gray.opacity(0.15) : Color.clear)
+            .cornerRadius(4)
+            .contentShape(Rectangle())
+            .onHover { isHovered = $0 }
+            .onTapGesture { action() }
     }
 }
 
@@ -100,32 +99,15 @@ struct MenuRow: View {
     }
 }
 
-struct TransportButton: View {
-    let systemName: String
-    var fontSize: Font = .title3
-    let action: () -> Void
-    @State private var isHovered = false
-
-    var body: some View {
-        Image(systemName: systemName)
-            .font(fontSize)
-            .foregroundStyle(.primary)
-            .padding(6)
-            .background(isHovered ? Color.gray.opacity(0.15) : Color.clear)
-            .cornerRadius(4)
-            .contentShape(Rectangle())
-            .onHover { isHovered = $0 }
-            .onTapGesture { action() }
-    }
-}
-
-struct MenuBarView: View {
+struct MenuBarPopoverView: View {
     @ObservedObject private var nowPlaying = NowPlayingViewModel.shared
 
     var body: some View {
         VStack(spacing: 0) {
-            nowPlayingSection; Divider()
-            transportSection; Divider()
+            nowPlayingSection
+            Divider()
+            transportSection
+            Divider()
             bottomSection
         }
         .frame(width: 220)
@@ -134,16 +116,35 @@ struct MenuBarView: View {
 
     private var nowPlayingSection: some View {
         VStack(spacing: 4) {
-            Text("Now Playing").font(.caption).fontWeight(.semibold).foregroundStyle(.secondary).frame(maxWidth: .infinity, alignment: .leading)
+            Text("Now Playing")
+                .font(.caption)
+                .fontWeight(.semibold)
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
             if nowPlaying.trackTitle.isEmpty {
-                Text("No track playing").font(.body).foregroundStyle(.primary).frame(maxWidth: .infinity, alignment: .leading)
-                Text("No artist").font(.callout).foregroundStyle(.secondary).frame(maxWidth: .infinity, alignment: .leading)
+                Text("No track playing")
+                    .font(.body)
+                    .foregroundStyle(.primary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                Text("No artist")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
             } else {
-                Text(nowPlaying.trackTitle).font(.body).foregroundStyle(.primary).lineLimit(1).frame(maxWidth: .infinity, alignment: .leading)
-                Text(nowPlaying.artistName).font(.callout).foregroundStyle(.secondary).lineLimit(1).frame(maxWidth: .infinity, alignment: .leading)
+                Text(nowPlaying.trackTitle)
+                    .font(.body)
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                Text(nowPlaying.artistName)
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
-        .padding(.horizontal, 12).padding(.vertical, 8)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
     }
 
     private var transportSection: some View {

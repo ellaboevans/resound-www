@@ -5,6 +5,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private let coordinator = AppCoordinator()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        NSApp.setActivationPolicy(.accessory)
         closeEmptyWindow()
         coordinator.start()
     }
