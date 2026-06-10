@@ -88,12 +88,12 @@ struct MusicSection: View {
                 .font(.system(size: 11))
                 .opacity(0.45)
                 .lineLimit(1)
-            if !albumTitle.isEmpty {
-                Text(albumTitle)
-                    .font(.system(size: 10))
-                    .opacity(0.3)
-                    .lineLimit(1)
-            }
+            // if !albumTitle.isEmpty {
+            //     Text(albumTitle)
+            //         .font(.system(size: 10))
+            //         .opacity(0.3)
+            //         .lineLimit(1)
+            // } // left out for now since it often doesn't fit and isn't as important as artist name
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
