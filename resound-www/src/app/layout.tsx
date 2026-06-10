@@ -1,10 +1,65 @@
 import type { Metadata } from "next";
 import "./globals.css";
 
+import { absoluteUrl, siteConfig } from "@/lib/seo";
+
 export const metadata: Metadata = {
-  title: "Resound - Dynamic Island for Mac Music",
-  description:
-    "A Dynamic Island-style music controller for macOS with now-playing info, waveform visuals, hotkeys, and native menu bar controls.",
+  metadataBase: new URL(siteConfig.url),
+  title: {
+    default: siteConfig.title,
+    template: `%s | ${siteConfig.name}`,
+  },
+  description: siteConfig.description,
+  applicationName: siteConfig.name,
+  authors: [{ name: siteConfig.creator }],
+  creator: siteConfig.creator,
+  publisher: siteConfig.creator,
+  keywords: [...siteConfig.keywords],
+  alternates: {
+    canonical: "/",
+  },
+  category: "technology",
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: "/",
+    siteName: siteConfig.name,
+    title: siteConfig.title,
+    description: siteConfig.description,
+    images: [
+      {
+        url: siteConfig.ogImage,
+        width: 1800,
+        height: 945,
+        alt: "Resound Dynamic Island-style music controller for macOS",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: siteConfig.title,
+    description: siteConfig.description,
+    images: [siteConfig.ogImage],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+    },
+  },
+  icons: {
+    icon: [
+      { url: "/favicon.ico" },
+      { url: "/resound/resound.svg", type: "image/svg+xml" },
+    ],
+    apple: [{ url: "/resound/resound.svg" }],
+  },
+  manifest: absoluteUrl("/manifest.webmanifest"),
 };
 
 export default function RootLayout({
@@ -13,10 +68,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="en"
-      className="dark h-full antialiased"
-    >
+    <html lang="en" className="dark h-full antialiased">
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );

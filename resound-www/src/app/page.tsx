@@ -30,6 +30,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { absoluteUrl, siteConfig } from "@/lib/seo";
 import { cn } from "@/lib/utils";
 
 const features = [
@@ -145,9 +146,54 @@ const socialLinks = [
   },
 ];
 
+const structuredData = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebSite",
+      "@id": absoluteUrl("/#website"),
+      name: siteConfig.name,
+      url: absoluteUrl("/"),
+      description: siteConfig.description,
+      inLanguage: "en-US",
+      publisher: {
+        "@id": absoluteUrl("/#person"),
+      },
+    },
+    {
+      "@type": "Person",
+      "@id": absoluteUrl("/#person"),
+      name: siteConfig.creator,
+    },
+    {
+      "@type": "SoftwareApplication",
+      "@id": absoluteUrl("/#software"),
+      name: siteConfig.name,
+      applicationCategory: "MultimediaApplication",
+      operatingSystem: "macOS Sonoma or later",
+      url: absoluteUrl("/"),
+      image: absoluteUrl(siteConfig.ogImage),
+      description: siteConfig.description,
+      downloadUrl: absoluteUrl("/resound/Resound.dmg"),
+      author: {
+        "@id": absoluteUrl("/#person"),
+      },
+      offers: {
+        "@type": "Offer",
+        price: "0",
+        priceCurrency: "USD",
+      },
+    },
+  ],
+};
+
 export default function Home() {
   return (
     <main className="relative isolate min-h-screen overflow-hidden">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+      />
       <DashedGridBackground />
       <div className="relative z-10">
         <Header />
@@ -475,8 +521,7 @@ function Footer() {
           <div className="flex max-w-md flex-col gap-6">
             <SmoothScrollLink
               href="#top"
-              className="flex w-fit items-center gap-3 font-heading text-2xl font-black text-foreground"
-            >
+              className="flex w-fit items-center gap-3 font-heading text-2xl font-black text-foreground">
               <span className="grid size-11 place-items-center overflow-hidden rounded-lg border bg-background">
                 <Image
                   src="/resound/resound.svg"
@@ -497,8 +542,7 @@ function Footer() {
               <Link
                 className={cn(buttonVariants({ size: "lg" }), "h-11")}
                 href="/resound/Resound.dmg"
-                download
-              >
+                download>
                 <ArrowDownToLine data-icon="inline-start" />
                 Download
               </Link>
@@ -507,8 +551,7 @@ function Footer() {
                   buttonVariants({ variant: "outline", size: "lg" }),
                   "h-11",
                 )}
-                href="#features"
-              >
+                href="#features">
                 <PanelTop data-icon="inline-start" />
                 Features
               </SmoothScrollLink>
@@ -527,16 +570,14 @@ function Footer() {
                       {item.href.startsWith("#") ? (
                         <SmoothScrollLink
                           href={item.href}
-                          className="inline-flex items-center gap-1.5 transition-colors hover:text-foreground"
-                        >
+                          className="inline-flex items-center gap-1.5 transition-colors hover:text-foreground">
                           {item.label}
                         </SmoothScrollLink>
                       ) : (
                         <Link
                           href={item.href}
                           download={item.download}
-                          className="inline-flex items-center gap-1.5 transition-colors hover:text-foreground"
-                        >
+                          className="inline-flex items-center gap-1.5 transition-colors hover:text-foreground">
                           {item.label}
                         </Link>
                       )}
@@ -567,8 +608,7 @@ function Footer() {
                   key={item.label}
                   href={item.href}
                   aria-label={item.label}
-                  className="inline-flex size-10 items-center justify-center rounded-md border bg-card text-muted-foreground transition-colors hover:text-foreground"
-                >
+                  className="inline-flex size-10 items-center justify-center rounded-md border bg-card text-muted-foreground transition-colors hover:text-foreground">
                   <item.icon />
                 </SmoothScrollLink>
               ) : (
@@ -577,8 +617,7 @@ function Footer() {
                   href={item.href}
                   download={item.download}
                   aria-label={item.label}
-                  className="inline-flex size-10 items-center justify-center rounded-md border bg-card text-muted-foreground transition-colors hover:text-foreground"
-                >
+                  className="inline-flex size-10 items-center justify-center rounded-md border bg-card text-muted-foreground transition-colors hover:text-foreground">
                   <item.icon />
                 </Link>
               ),
