@@ -40,7 +40,8 @@ struct ContentView: View {
     private var pillView: some View {
         PillView(
             trackTitle: nowPlaying.trackTitle,
-            isPlaying: nowPlaying.isPlaying
+            isPlaying: nowPlaying.isPlaying,
+            artworkImage: nowPlaying.artworkImage
         )
         .transaction { t in
             t.disablesAnimations = true
