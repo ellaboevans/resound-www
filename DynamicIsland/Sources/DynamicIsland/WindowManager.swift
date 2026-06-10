@@ -1,5 +1,6 @@
 import Cocoa
 import SwiftUI
+import Combine
 
 final class WindowManager {
     static let shared = WindowManager()
@@ -9,9 +10,17 @@ final class WindowManager {
     private var isExpanded = false
     private var collapseWorkItem: DispatchWorkItem?
     private let settings = SettingsViewModel.shared
+    private var isResizing = false
+    private var cancellables = Set<AnyCancellable>()
+
     init() {}
 
     func show() {
+        if let existing = window, existing.isVisible {
+            existing.makeKeyAndOrderFront(nil)
+            return
+        }
+
         let contentView = ContentView(onToggle: { [weak self] expanded in
             if expanded { self?.expand() } else { self?.collapse() }
         })
@@ -37,6 +46,15 @@ final class WindowManager {
         positionWindow(window, height: collapsedHeight)
         window.makeKeyAndOrderFront(nil)
         self.window = window
+
+        settings.objectWillChange
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                guard let self, let window = self.window else { return }
+                let height = self.isExpanded ? self.expandedHeight : self.collapsedHeight
+                self.positionWindow(window, height: height)
+            }
+            .store(in: &cancellables)
     }
 
     deinit { window?.close() }
@@ -47,6 +65,7 @@ final class WindowManager {
 
     private func expand() {
         collapseWorkItem?.cancel()
+        guard !isExpanded else { return }
         isExpanded = true
         guard let window = window else { return }
         positionWindow(window, height: expandedHeight)
@@ -65,6 +84,10 @@ final class WindowManager {
     }
 
     private func positionWindow(_ window: NSWindow, height: CGFloat) {
+        guard !isResizing else { return }
+        isResizing = true
+        defer { isResizing = false }
+
         guard let screen = NSScreen.main else { return }
         let width = CGFloat(settings.notchWidth)
         let x: CGFloat

@@ -24,21 +24,26 @@ struct SettingsAppearanceView: View {
             }
 
             Section {
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 80))]) {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 100))]) {
                     ForEach(WaveformStyle.allCases, id: \.self) { style in
-                        VStack {
-                            WaveformPreview(style: style, isPlaying: true)
-                                .frame(height: 28)
+                        VStack(spacing: 6) {
+WaveformPreview(style: style, isPlaying: true, animated: false)
+    .frame(height: 32)
                             Text(style.rawValue)
-                                .font(.caption2)
+                                .font(.caption)
                         }
-                        .padding(6)
-                        .background(settings.waveformStyle == style ? Color.accentColor.opacity(0.2) : Color.clear)
-                        .cornerRadius(6)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 6)
-                                .stroke(settings.waveformStyle == style ? Color.accentColor : Color.clear, lineWidth: 1)
+                        .padding(12)
+                        .frame(minHeight: 72)
+                        .frame(maxWidth: .infinity)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(settings.waveformStyle == style ? Color.accentColor.opacity(0.15) : Color.gray.opacity(0.08))
                         )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 8)
+                                .stroke(settings.waveformStyle == style ? Color.accentColor : Color.gray.opacity(0.25), lineWidth: 1)
+                        )
+                        .contentShape(Rectangle())
                         .onTapGesture { settings.waveformStyle = style }
                     }
                 }

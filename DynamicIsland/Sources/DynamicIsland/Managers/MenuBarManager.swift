@@ -34,6 +34,45 @@ final class MenuBarManager: NSObject {
     }
 }
 
+struct MenuRow: View {
+    let title: String
+    let action: () -> Void
+    @State private var isHovered = false
+
+    var body: some View {
+        Text(title)
+            .font(.body)
+            .foregroundStyle(.primary)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+            .background(isHovered ? Color.gray.opacity(0.15) : Color.clear)
+            .cornerRadius(4)
+            .contentShape(Rectangle())
+            .onHover { isHovered = $0 }
+            .onTapGesture { action() }
+    }
+}
+
+struct TransportButton: View {
+    let systemName: String
+    var fontSize: Font = .title3
+    let action: () -> Void
+    @State private var isHovered = false
+
+    var body: some View {
+        Image(systemName: systemName)
+            .font(fontSize)
+            .foregroundStyle(.primary)
+            .padding(6)
+            .background(isHovered ? Color.gray.opacity(0.15) : Color.clear)
+            .cornerRadius(4)
+            .contentShape(Rectangle())
+            .onHover { isHovered = $0 }
+            .onTapGesture { action() }
+    }
+}
+
 struct MenuBarView: View {
     @ObservedObject private var nowPlaying = NowPlayingViewModel.shared
 
@@ -63,17 +102,17 @@ struct MenuBarView: View {
 
     private var transportSection: some View {
         HStack(spacing: 12) {
-            Image(systemName: "backward.fill").font(.title3).foregroundStyle(.primary).onTapGesture { NowPlayingViewModel.shared.previousTrack() }
-            Image(systemName: nowPlaying.isPlaying ? "pause.fill" : "play.fill").font(.title2).foregroundStyle(.primary).onTapGesture { NowPlayingViewModel.shared.playPause() }
-            Image(systemName: "forward.fill").font(.title3).foregroundStyle(.primary).onTapGesture { NowPlayingViewModel.shared.nextTrack() }
+            TransportButton(systemName: "backward.fill") { NowPlayingViewModel.shared.previousTrack() }
+            TransportButton(systemName: nowPlaying.isPlaying ? "pause.fill" : "play.fill", fontSize: .title2) { NowPlayingViewModel.shared.playPause() }
+            TransportButton(systemName: "forward.fill") { NowPlayingViewModel.shared.nextTrack() }
         }
         .padding(.vertical, 8)
     }
 
     private var bottomSection: some View {
-        VStack(spacing: 4) {
-            Text("Settings...").font(.body).foregroundStyle(.primary).frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 12).padding(.vertical, 4).onTapGesture { SettingsWindowController.shared.open() }
-            Text("Quit").font(.body).foregroundStyle(.primary).frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 12).padding(.vertical, 4).onTapGesture { NSApplication.shared.terminate(nil) }
+        VStack(spacing: 2) {
+            MenuRow(title: "Settings...") { SettingsWindowController.shared.open() }
+            MenuRow(title: "Quit") { NSApplication.shared.terminate(nil) }
         }
         .padding(.vertical, 4)
     }

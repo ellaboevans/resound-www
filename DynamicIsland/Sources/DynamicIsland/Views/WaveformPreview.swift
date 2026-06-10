@@ -3,10 +3,17 @@ import SwiftUI
 struct WaveformPreview: View {
     let style: WaveformStyle
     let isPlaying: Bool
+    var animated: Bool = true
 
     var body: some View {
-        TimelineView(.periodic(from: .now, by: 0.03)) { timeline in
-            content(for: timeline.date)
+        Group {
+            if animated {
+                TimelineView(.periodic(from: .now, by: 0.03)) { timeline in
+                    content(for: timeline.date)
+                }
+            } else {
+                content(for: Date())
+            }
         }
         .frame(height: 28)
         .clipped()
@@ -18,7 +25,6 @@ struct WaveformPreview: View {
         case .classic: ClassicBars(date: date, isPlaying: isPlaying).frame(maxWidth: .infinity)
         case .pulse: PulseBar(date: date, isPlaying: isPlaying).frame(maxWidth: .infinity)
         case .equalizer: EqualizerBars(date: date, isPlaying: isPlaying).frame(maxWidth: .infinity)
-        case .minimal: MinimalLine(date: date, isPlaying: isPlaying)
         }
     }
 }
@@ -75,21 +81,4 @@ private struct EqualizerBars: View {
     }
 }
 
-private struct MinimalLine: View {
-    let date: Date; let isPlaying: Bool
-    var body: some View {
-        GeometryReader { geo in
-            let p = progress
-            ZStack(alignment: .leading) {
-                Capsule().fill(Color.white.opacity(0.2)).frame(width: geo.size.width, height: 1.5)
-                Capsule().fill(Color.white).frame(width: max(0, geo.size.width * p - 2), height: 1.5)
-                Circle().fill(Color.white).frame(width: 5, height: 5).offset(x: geo.size.width * p - 2.5)
-            }
-            .animation(.linear(duration: 0.03), value: p)
-        }
-    }
-    private var progress: CGFloat {
-        guard isPlaying else { return 0.5 }
-        return CGFloat((sin(date.timeIntervalSinceReferenceDate * 0.8) + 1) / 2)
-    }
-}
+

@@ -35,8 +35,6 @@ struct ContentView: View {
             isExpanded = hovering
             onToggle(hovering)
         }
-        .onAppear { NowPlayingViewModel.shared.start() }
-        .onDisappear { NowPlayingViewModel.shared.stop() }
     }
 
     private var pillView: some View {
