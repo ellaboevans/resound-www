@@ -18,6 +18,11 @@ jobs:
       - name: Select Swift version
         run: swift --version
 
+      - name: Generate icon
+        run: |
+          swift scripts/generate-icon.swift /tmp/Resound.iconset
+          cp /tmp/Resound.icns Sources/Resound/Resources/Resound.icns
+
       - name: Build release
         run: swift build -c release
 
@@ -29,13 +34,11 @@ jobs:
           cp Sources/Resound/Resources/Resound.icns Resound.app/Contents/Resources/
           codesign --force --deep --sign - Resound.app
 
+      - name: Install create-dmg
+        run: brew install create-dmg
+
       - name: Create DMG
-        run: |
-          mkdir -p dmg_staging
-          cp -R Resound.app dmg_staging/
-          ln -s /Applications dmg_staging/Applications
-          hdiutil create -volname "Resound" -srcfolder dmg_staging -ov -format UDZO Resound.dmg
-          rm -rf dmg_staging
+        run: scripts/create-dmg.sh
 
       - name: Upload DMG as artifact
         uses: actions/upload-artifact@v4

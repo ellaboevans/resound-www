@@ -13,13 +13,12 @@ release:
 	cp Sources/Resound/Resources/Resound.icns Resound.app/Contents/Resources/
 	codesign --force --deep --sign - Resound.app
 
-dmg: release
-	mkdir -p dmg_staging
-	cp -R Resound.app dmg_staging/
-	ln -s /Applications dmg_staging/Applications
-	hdiutil create -volname "Resound" -srcfolder dmg_staging -ov -format UDZO Resound.dmg
-	rm -rf dmg_staging
-	@echo "Created Resound.dmg"
+dmg: icon release
+	scripts/create-dmg.sh
+
+icon:
+	swift scripts/generate-icon.swift /tmp/Resound.iconset
+	cp /tmp/Resound.icns Sources/Resound/Resources/Resound.icns
 
 clean:
 	rm -rf .build Resound.app dmg_staging Resound.dmg

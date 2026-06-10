@@ -1,5 +1,6 @@
 .build/
-*.app
 *.dmg
+Resound.app/
 dmg_staging/
+.DS_Store
 .superpowers/
