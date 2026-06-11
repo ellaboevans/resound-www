@@ -90,12 +90,22 @@ const faqs = [
   {
     question: "Which music apps work?",
     answer:
-      "Spotify and Apple Music are supported by the current app integration.",
+      "Spotify and Apple Music are supported by the current app integration. YouTube Music is also supported through Chrome.",
+  },
+  {
+    question: "Which screen does the island show on?",
+    answer:
+      "You can choose between showing on all connected displays or a single screen. Open Resound's settings and pick from the display dropdown. Useful if you only want it on your external monitor or built-in display.",
+  },
+  {
+    question: "How do I get YouTube Music to work in Chrome?",
+    answer:
+      "Resound needs a one-time Chrome setting: open DevTools with Cmd+Opt+I, then go to View \u2192 Developer \u2192 Allow JavaScript from Apple Events and click to enable it. Resound will show a dialog with these steps when you first open YouTube Music.",
   },
   {
     question: "Why does Resound ask to access Google Chrome?",
     answer:
-      "Resound uses Chrome access to detect YouTube Music tabs, read the current track, and send playback controls. If you do not listen through YouTube Music in Chrome, you can deny the permission and keep using Spotify or Apple Music.",
+      "Resound uses Chrome to detect YouTube Music tabs, read the current track, and send playback controls. When enabled, Chrome will show a system prompt \u2014 approve it so Resound can scan your tabs. If JavaScript execution is blocked, Resound will show a one-time dialog with setup instructions.",
   },
   {
     question: "Does it show in the dock?",
