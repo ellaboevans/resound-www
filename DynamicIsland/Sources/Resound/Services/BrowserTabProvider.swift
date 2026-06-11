@@ -11,6 +11,7 @@ final class BrowserTabProvider {
     private var oembedCache: [String: (title: String, artist: String)] = [:]
     private var consecutiveNoDataCount = 0
     private let maxNoDataBeforeSlow = 10
+    private var jsAppleEventsDialogShown = false
     let publisher = PassthroughSubject<NowPlayingInfo, Never>()
 
     struct NowPlayingInfo: Equatable {
@@ -73,6 +74,47 @@ final class BrowserTabProvider {
         NSWorkspace.shared.runningApplications.contains { $0.bundleIdentifier == "com.google.Chrome" }
     }
 
+    private func showJavascriptAppleEventsDialog() {
+        guard !jsAppleEventsDialogShown else { return }
+        jsAppleEventsDialogShown = true
+        DispatchQueue.main.async {
+            let alert = NSAlert()
+            alert.messageText = "Chrome JavaScript Access Required"
+            alert.informativeText = "Resound needs JavaScript in Chrome to detect YouTube Music playback.\n\nTo enable:\n1. In Chrome, go to View → Developer → Developer Tools\n2. Then go to View → Developer → Allow JavaScript from Apple Events\n3. Click it to enable\n\nThis only needs to be done once."
+            alert.alertStyle = .informational
+            alert.icon = Self.resoundIcon(size: 64)
+            let widthView = NSView(frame: NSRect(x: 0, y: 0, width: 420, height: 1))
+            alert.accessoryView = widthView
+            alert.addButton(withTitle: "Ok, Got it!")
+            alert.runModal()
+        }
+    }
+
+    private static func resoundIcon(size: CGFloat) -> NSImage {
+        let iconSize = NSSize(width: size, height: size)
+        return NSImage(size: iconSize, flipped: false) { rect in
+            let inset = size * 0.15
+            let outer = rect.insetBy(dx: inset, dy: inset)
+            let barCount = 3
+            let barWidth = size * 0.1
+            let spacing = size * 0.12
+            let totalWidth = CGFloat(barCount) * barWidth + CGFloat(barCount - 1) * spacing
+            let startX = outer.midX - totalWidth / 2
+            let maxHeight = outer.height - size * 0.15
+            let heights: [CGFloat] = [0.4, 1.0, 0.7]
+            NSColor.controlTextColor.setFill()
+            for (i, relHeight) in heights.enumerated() {
+                let barHeight = max(maxHeight * relHeight, size * 0.06)
+                let x = startX + CGFloat(i) * (barWidth + spacing)
+                let y = outer.midY - barHeight / 2
+                let barRect = CGRect(x: x, y: y, width: barWidth, height: barHeight)
+                let barPath = NSBezierPath(roundedRect: barRect, xRadius: size * 0.03, yRadius: size * 0.03)
+                barPath.fill()
+            }
+            return true
+        }
+    }
+
     private func poll() {
         guard isChromeRunning() else {
             if lastInfo != nil {
@@ -89,6 +131,7 @@ final class BrowserTabProvider {
         let jxa = """
         var chrome = Application("Google Chrome");
         var result = "";
+        var jsBlocked = false;
         try {
             if (chrome.running()) {
                 var wins = chrome.windows();
@@ -104,8 +147,11 @@ final class BrowserTabProvider {
                                 try {
                                     var js = "try{var p=document.querySelector('#movie_player,#ytd-player');if(p&&p.getPlayerState){var s=p.getPlayerState();(s==1?'true':'false')+'|||'+p.getCurrentTime()+'|||'+p.getDuration()}else{var v=document.querySelector('video');v?(!v.paused+'|||'+v.currentTime+'|||'+v.duration):''}}catch(e){''}";
                                     state = t.execute({javascript: js});
-                                } catch(e) { state = ""; }
-                                result = name + "|||" + url + "|||" + state;
+                                } catch(e) {
+                                    state = "";
+                                    if (e.message && e.message.indexOf("turned off") >= 0) { jsBlocked = true; }
+                                }
+                                result = (jsBlocked ? "JS_BLOCKED|||" : "") + name + "|||" + url + "|||" + state;
                                 break;
                             }
                         }
@@ -141,19 +187,24 @@ final class BrowserTabProvider {
                 return
             }
 
+            var offset = 0
+            if output.hasPrefix("JS_BLOCKED|||") {
+                offset = 1
+                showJavascriptAppleEventsDialog()
+            }
             let parts = output.components(separatedBy: "|||")
-            guard parts.count >= 5 else {
+            guard parts.count >= 5 + offset else {
                 consecutiveNoDataCount += 1
                 if consecutiveNoDataCount >= maxNoDataBeforeSlow {
                     scheduleTimer(interval: 5.0)
                 }
                 return
             }
-            let title = parts[0]
-            let url = parts[1]
-            let isPlaying = parts[2] == "true"
-            let currentTime = TimeInterval(parts[3]) ?? 0
-            let duration = TimeInterval(parts[4]) ?? 0
+            let title = parts[0 + offset]
+            let url = parts[1 + offset]
+            let isPlaying = parts[2 + offset] == "true"
+            let currentTime = TimeInterval(parts[3 + offset]) ?? 0
+            let duration = TimeInterval(parts[4 + offset]) ?? 0
 
             guard let urlComponents = URLComponents(string: url),
                   urlComponents.host?.contains("music.youtube.com") == true,
