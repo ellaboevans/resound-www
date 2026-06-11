@@ -8,6 +8,7 @@ struct NowPlayingInfo: Equatable {
     let duration: TimeInterval
     let elapsedTime: TimeInterval
     let isPlaying: Bool
+    let volume: Int
     let artworkPath: String
 }
 
@@ -18,6 +19,7 @@ protocol NowPlayingProviding {
     func playPause()
     func nextTrack()
     func previousTrack()
+    func setVolume(_ volume: Int)
 }
 
 final class NowPlayingService {
@@ -69,6 +71,7 @@ final class NowPlayingService {
                         duration: remoteInfo.duration,
                         elapsedTime: remoteInfo.elapsedTime,
                         isPlaying: remoteInfo.isPlaying,
+                        volume: 0,
                         artworkPath: path
                     ))
                 }
@@ -87,6 +90,7 @@ final class NowPlayingService {
                     duration: browserInfo.duration,
                     elapsedTime: browserInfo.elapsedTime,
                     isPlaying: browserInfo.isPlaying,
+                    volume: browserInfo.volume,
                     artworkPath: browserInfo.artworkPath
                 ))
             }
@@ -138,8 +142,25 @@ final class NowPlayingService {
                 duration: browserInfo.duration,
                 elapsedTime: browserInfo.elapsedTime,
                 isPlaying: !browserInfo.isPlaying,
+                volume: browserInfo.volume,
                 artworkPath: browserInfo.artworkPath
             ))
+        }
+    }
+
+    func setVolume(_ volume: Int) {
+        let clamped = max(0, min(100, volume))
+        switch musicSource {
+        case .spotify:
+            if isAppRunning("Spotify") { runAppleScript("tell application \"Spotify\" to set sound volume to \(clamped)") }
+        case .appleMusic:
+            if isAppRunning("Music") { runAppleScript("tell application \"Music\" to set sound volume to \(clamped)") }
+        case .automatic:
+            if isAppRunning("Spotify") { runAppleScript("tell application \"Spotify\" to set sound volume to \(clamped)"); return }
+            if isAppRunning("Music") { runAppleScript("tell application \"Music\" to set sound volume to \(clamped)"); return }
+            guard isChromeRunning() else { return }
+            let vol = Double(clamped) / 100.0
+            chromeMediaCommand("document.querySelector('video').volume = \(vol)")
         }
     }
 
@@ -287,7 +308,7 @@ final class NowPlayingService {
                     else
                         set stateStr to "paused"
                     end if
-                    set output to (name of current track) & "|||" & (artist of current track) & "|||" & (album of current track) & "|||" & (duration of current track) & "|||" & (player position) & "|||" & stateStr & "|||" & (spotify url of current track)
+                    set output to (name of current track) & "|||" & (artist of current track) & "|||" & (album of current track) & "|||" & (duration of current track) & "|||" & (player position) & "|||" & stateStr & "|||" & (spotify url of current track) & "|||" & (sound volume)
                 end if
             end tell
         end if
@@ -297,9 +318,9 @@ final class NowPlayingService {
         if output is "" and exists (process "Music") then
             tell application "Music"
                 if player state is playing then
-                    set output to (name of current track) & "|||" & (artist of current track) & "|||" & (album of current track) & "|||" & (duration of current track) & "|||" & (player position) & "|||playing"
+                    set output to (name of current track) & "|||" & (artist of current track) & "|||" & (album of current track) & "|||" & (duration of current track) & "|||" & (player position) & "|||playing|||" & (sound volume)
                 else if player state is paused then
-                    set output to (name of current track) & "|||" & (artist of current track) & "|||" & (album of current track) & "|||" & (duration of current track) & "|||" & (player position) & "|||paused"
+                    set output to (name of current track) & "|||" & (artist of current track) & "|||" & (album of current track) & "|||" & (duration of current track) & "|||" & (player position) & "|||paused|||" & (sound volume)
                 end if
             end tell
         end if
@@ -326,11 +347,15 @@ final class NowPlayingService {
 
             var spotifyUri: String?
             var artworkPath: String
+            var volume = 50
 
             if parts[5] == "playing" || parts[5] == "paused" {
-                // Spotify branch - 7 parts
+                // Spotify branch - has URI + volume
                 if parts.count > 6 {
                     spotifyUri = parts[6]
+                }
+                if parts.count > 7, let v = Int(parts[7]) {
+                    volume = v
                 }
                 if artworkCache.hasArtwork {
                     artworkPath = artworkCache.path
@@ -338,6 +363,10 @@ final class NowPlayingService {
                     artworkPath = ""
                 }
             } else {
+                // Music branch - has volume at index 6
+                if parts.count > 6, let v = Int(parts[6]) {
+                    volume = v
+                }
                 artworkPath = ""
             }
 
@@ -348,6 +377,7 @@ final class NowPlayingService {
                 duration: (Double(parts[3]) ?? 0) / 1000,
                 elapsedTime: Double(parts[4]) ?? 0,
                 isPlaying: parts[5] == "playing",
+                volume: volume,
                 artworkPath: artworkPath
             ), spotifyUri)
         } catch {
@@ -358,7 +388,7 @@ final class NowPlayingService {
     private func sendEmpty() {
         publisher.send(NowPlayingInfo(
             trackTitle: "", artistName: "", albumTitle: "",
-            duration: 0, elapsedTime: 0, isPlaying: false, artworkPath: ""
+            duration: 0, elapsedTime: 0, isPlaying: false, volume: 0, artworkPath: ""
         ))
     }
 }

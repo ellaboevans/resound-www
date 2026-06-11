@@ -9,9 +9,11 @@ struct MusicSection: View {
     let elapsedText: String
     let remainingText: String
     let isPlaying: Bool
+    let volume: Int
     let onPlayPause: () -> Void
     let onNext: () -> Void
     let onPrevious: () -> Void
+    let onSetVolume: (Int) -> Void
 
     var body: some View {
         VStack(spacing: 0) {
@@ -46,7 +48,8 @@ struct MusicSection: View {
             }
             .padding(.horizontal, 16)
             .padding(.top, 12)
-            .padding(.bottom, 16)
+
+            VolumeSlider(volume: volume, onSetVolume: onSetVolume)
         }
     }
 

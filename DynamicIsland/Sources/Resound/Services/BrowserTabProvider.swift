@@ -21,6 +21,7 @@ final class BrowserTabProvider {
         let duration: TimeInterval
         let elapsedTime: TimeInterval
         let isPlaying: Bool
+        let volume: Int
         let artworkPath: String
     }
 
@@ -54,7 +55,7 @@ final class BrowserTabProvider {
         consecutiveNoDataCount = 0
         stopPolling()
         DispatchQueue.main.async { [weak self] in
-            self?.publisher.send(NowPlayingInfo(trackTitle: "", artistName: "", albumTitle: "", duration: 0, elapsedTime: 0, isPlaying: false, artworkPath: ""))
+            self?.publisher.send(NowPlayingInfo(trackTitle: "", artistName: "", albumTitle: "", duration: 0, elapsedTime: 0, isPlaying: false, volume: 0, artworkPath: ""))
         }
     }
 
@@ -121,7 +122,7 @@ final class BrowserTabProvider {
                 lastInfo = nil
                 lastVideoId = nil
                 DispatchQueue.main.async { [weak self] in
-                    self?.publisher.send(NowPlayingInfo(trackTitle: "", artistName: "", albumTitle: "", duration: 0, elapsedTime: 0, isPlaying: false, artworkPath: ""))
+                    self?.publisher.send(NowPlayingInfo(trackTitle: "", artistName: "", albumTitle: "", duration: 0, elapsedTime: 0, isPlaying: false, volume: 0, artworkPath: ""))
                 }
             }
             scheduleTimer(interval: 5.0)
@@ -145,7 +146,7 @@ final class BrowserTabProvider {
                             if (url.indexOf("music.youtube.com") >= 0) {
                                 var state = "";
                                 try {
-                                    var js = "try{var p=document.querySelector('#movie_player,#ytd-player');if(p&&p.getPlayerState){var s=p.getPlayerState();(s==1?'true':'false')+'|||'+p.getCurrentTime()+'|||'+p.getDuration()}else{var v=document.querySelector('video');v?(!v.paused+'|||'+v.currentTime+'|||'+v.duration):''}}catch(e){''}";
+                                    var js = "try{var p=document.querySelector('#movie_player,#ytd-player');if(p&&p.getPlayerState){var s=p.getPlayerState();(s==1?'true':'false')+'|||'+p.getCurrentTime()+'|||'+p.getDuration()+'|||'+Math.round(p.getVolume()||0)}else{var v=document.querySelector('video');v?(!v.paused+'|||'+v.currentTime+'|||'+v.duration+'|||'+Math.round((v.volume||0)*100)):''}}catch(e){''}";
                                     state = t.execute({javascript: js});
                                 } catch(e) {
                                     state = "";
@@ -177,7 +178,7 @@ final class BrowserTabProvider {
                 if lastInfo != nil {
                     lastInfo = nil; lastVideoId = nil
                     DispatchQueue.main.async { [weak self] in
-                        self?.publisher.send(NowPlayingInfo(trackTitle: "", artistName: "", albumTitle: "", duration: 0, elapsedTime: 0, isPlaying: false, artworkPath: ""))
+                        self?.publisher.send(NowPlayingInfo(trackTitle: "", artistName: "", albumTitle: "", duration: 0, elapsedTime: 0, isPlaying: false, volume: 0, artworkPath: ""))
                     }
                 }
                 consecutiveNoDataCount += 1
@@ -193,7 +194,7 @@ final class BrowserTabProvider {
                 showJavascriptAppleEventsDialog()
             }
             let parts = output.components(separatedBy: "|||")
-            guard parts.count >= 5 + offset else {
+            guard parts.count >= 6 + offset else {
                 consecutiveNoDataCount += 1
                 if consecutiveNoDataCount >= maxNoDataBeforeSlow {
                     scheduleTimer(interval: 5.0)
@@ -205,6 +206,7 @@ final class BrowserTabProvider {
             let isPlaying = parts[2 + offset] == "true"
             let currentTime = TimeInterval(parts[3 + offset]) ?? 0
             let duration = TimeInterval(parts[4 + offset]) ?? 0
+            let volume = Int(parts[5 + offset]).flatMap { $0 >= 0 ? $0 : nil } ?? 50
 
             guard let urlComponents = URLComponents(string: url),
                   urlComponents.host?.contains("music.youtube.com") == true,
@@ -218,12 +220,12 @@ final class BrowserTabProvider {
 
             consecutiveNoDataCount = 0
             scheduleTimer(interval: 0.5)
-            handleYouTubeVideo(videoId: videoId, title: title, currentTime: currentTime, duration: duration, isPlaying: isPlaying)
+            handleYouTubeVideo(videoId: videoId, title: title, currentTime: currentTime, duration: duration, isPlaying: isPlaying, volume: volume)
         } catch {
             if lastInfo != nil {
                 lastInfo = nil; lastVideoId = nil
                 DispatchQueue.main.async { [weak self] in
-                    self?.publisher.send(NowPlayingInfo(trackTitle: "", artistName: "", albumTitle: "", duration: 0, elapsedTime: 0, isPlaying: false, artworkPath: ""))
+                    self?.publisher.send(NowPlayingInfo(trackTitle: "", artistName: "", albumTitle: "", duration: 0, elapsedTime: 0, isPlaying: false, volume: 0, artworkPath: ""))
                 }
             }
             consecutiveNoDataCount += 1
@@ -233,7 +235,7 @@ final class BrowserTabProvider {
         }
     }
 
-    private func handleYouTubeVideo(videoId: String, title: String, currentTime: TimeInterval, duration: TimeInterval, isPlaying: Bool) {
+    private func handleYouTubeVideo(videoId: String, title: String, currentTime: TimeInterval, duration: TimeInterval, isPlaying: Bool, volume: Int) {
         if videoId != lastVideoId {
             lastVideoId = videoId
 
@@ -242,7 +244,7 @@ final class BrowserTabProvider {
                 let info = NowPlayingInfo(
                     trackTitle: cached.title, artistName: cached.artist,
                     albumTitle: "", duration: duration, elapsedTime: currentTime,
-                    isPlaying: isPlaying, artworkPath: artworkCache.path
+                    isPlaying: isPlaying, volume: volume, artworkPath: artworkCache.path
                 )
                 lastInfo = info
                 DispatchQueue.main.async { [weak self] in
@@ -252,7 +254,7 @@ final class BrowserTabProvider {
                 let info = NowPlayingInfo(
                     trackTitle: parsed.title, artistName: parsed.artist,
                     albumTitle: "", duration: duration, elapsedTime: currentTime,
-                    isPlaying: isPlaying, artworkPath: ""
+                    isPlaying: isPlaying, volume: volume, artworkPath: ""
                 )
                 lastInfo = info
                 DispatchQueue.main.async { [weak self] in
@@ -266,13 +268,14 @@ final class BrowserTabProvider {
         guard let current = lastInfo else { return }
         let needsUpdate = current.isPlaying != isPlaying ||
                           abs(current.elapsedTime - currentTime) > 1 ||
-                          abs(current.duration - duration) > 0.1
+                          abs(current.duration - duration) > 0.1 ||
+                          current.volume != volume
         if needsUpdate {
             let updated = NowPlayingInfo(
                 trackTitle: current.trackTitle, artistName: current.artistName,
                 albumTitle: current.albumTitle, duration: duration,
                 elapsedTime: currentTime, isPlaying: isPlaying,
-                artworkPath: current.artworkPath
+                volume: volume, artworkPath: current.artworkPath
             )
             lastInfo = updated
             DispatchQueue.main.async { [weak self] in
@@ -301,7 +304,7 @@ final class BrowserTabProvider {
             let info = NowPlayingInfo(
                 trackTitle: oembedTitle, artistName: artist,
                 albumTitle: "", duration: 0, elapsedTime: 0,
-                isPlaying: true, artworkPath: artworkPath
+                isPlaying: true, volume: 50, artworkPath: artworkPath
             )
             lastInfo = info
             DispatchQueue.main.async { [weak self] in

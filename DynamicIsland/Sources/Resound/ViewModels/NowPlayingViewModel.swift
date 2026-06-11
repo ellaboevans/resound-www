@@ -12,6 +12,7 @@ final class NowPlayingViewModel: ObservableObject {
     @Published var duration: TimeInterval = 0
     @Published var elapsedTime: TimeInterval = 0
     @Published var isPlaying: Bool = false
+    @Published var volume: Int = 50
 
     private let service: any NowPlayingProviding
     private var cancellables = Set<AnyCancellable>()
@@ -56,6 +57,7 @@ final class NowPlayingViewModel: ObservableObject {
                 self.duration = info.duration
                 self.elapsedAtStart = info.elapsedTime
                 self.isPlaying = info.isPlaying
+                self.volume = info.volume
                 self.trackStartDate = info.isPlaying ? Date() : nil
                 self.syncElapsed()
 
@@ -83,6 +85,7 @@ final class NowPlayingViewModel: ObservableObject {
     func playPause() { service.playPause() }
     func nextTrack() { service.nextTrack() }
     func previousTrack() { service.previousTrack() }
+    func setVolume(_ volume: Int) { service.setVolume(volume) }
 
     private func syncElapsed() {
         elapsedTime = currentElapsed

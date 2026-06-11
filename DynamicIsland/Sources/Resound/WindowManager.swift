@@ -2,11 +2,11 @@ import Cocoa
 import SwiftUI
 import Combine
 
+@MainActor
 final class WindowManager {
     static let shared = WindowManager()
     private var windows: [String: NSWindow] = [:]
     private let collapsedHeight: CGFloat = 38
-    private let expandedHeight: CGFloat = 192
     private var collapseWork: DispatchWorkItem?
     private let settings = SettingsViewModel.shared
     private var isResizing = false
@@ -99,14 +99,15 @@ final class WindowManager {
     private func makeWindow(for screen: NSScreen) -> NSWindow {
         let screenName = "\(screen.localizedName)"
         let isInitiallyExpanded = !settings.autoHide
-        let contentView = ContentView(onToggle: { [weak self] expanded in
+        let initialExpandedHeight: CGFloat = NowPlayingViewModel.shared.trackTitle.isEmpty ? 100 : 210
+        let contentView = ContentView(onToggle: { [weak self] height in
             guard let self else { return }
             guard let win = self.windows[screenName] else { return }
-            if expanded {
-                self.collapseWork?.cancel()
-                self.positionWindow(win, height: self.expandedHeight)
-            } else {
+            self.collapseWork?.cancel()
+            if height == self.collapsedHeight {
                 self.scheduleCollapse(win)
+            } else {
+                self.positionWindow(win, height: height)
             }
         })
 
@@ -128,7 +129,7 @@ final class WindowManager {
         window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
         window.contentView = hostingView
 
-        positionWindow(window, on: screen, height: isInitiallyExpanded ? expandedHeight : collapsedHeight)
+        positionWindow(window, on: screen, height: isInitiallyExpanded ? initialExpandedHeight : collapsedHeight)
         window.makeKeyAndOrderFront(nil)
         return window
     }
