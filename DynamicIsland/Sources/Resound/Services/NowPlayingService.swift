@@ -25,22 +25,27 @@ final class NowPlayingService {
     private let queue = DispatchQueue(label: "com.dynamicisland.applescript", qos: .utility)
     private let appleScript = AppleScriptRunner()
     private let artworkCache = SpotifyArtworkCache(path: "/tmp/dynamic_island_art.jpg")
+    private let mediaArtworkPath = "/tmp/dynamic_island_media_art.jpg"
     private var lastSpotifyUri: String?
     private var lastNotificationDate = Date.distantPast
     private var fallbackTimer: Timer?
     private var cancellables = Set<AnyCancellable>()
     let publisher = PassthroughSubject<NowPlayingInfo, Never>()
 
+    private var musicSource: MusicSource {
+        SettingsViewModel.shared.musicSource
+    }
+
     func startMonitoring() {
         DistributedNotificationCenter.default().addObserver(
             self,
-            selector: #selector(playbackNotification),
+            selector: #selector(spotifyNotification),
             name: NSNotification.Name("com.spotify.client.PlaybackStateChanged"),
             object: nil
         )
         DistributedNotificationCenter.default().addObserver(
             self,
-            selector: #selector(playbackNotification),
+            selector: #selector(musicNotification),
             name: NSNotification.Name("com.apple.Music.playerInfo"),
             object: nil
         )
@@ -49,8 +54,14 @@ final class NowPlayingService {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] remoteInfo in
                 guard let self else { return }
+                guard musicSource == .automatic else { return }
                 let isMusicApp = remoteInfo.sourceApp == "com.spotify.client" || remoteInfo.sourceApp == "com.apple.Music"
                 if !isMusicApp {
+                    var path = ""
+                    if let data = remoteInfo.artworkData {
+                        try? data.write(to: URL(fileURLWithPath: self.mediaArtworkPath))
+                        path = self.mediaArtworkPath
+                    }
                     self.publisher.send(NowPlayingInfo(
                         trackTitle: remoteInfo.trackTitle,
                         artistName: remoteInfo.artistName,
@@ -58,7 +69,7 @@ final class NowPlayingService {
                         duration: remoteInfo.duration,
                         elapsedTime: remoteInfo.elapsedTime,
                         isPlaying: remoteInfo.isPlaying,
-                        artworkPath: ""
+                        artworkPath: path
                     ))
                 }
             }
@@ -68,6 +79,7 @@ final class NowPlayingService {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] browserInfo in
                 guard let self else { return }
+                guard musicSource == .automatic else { return }
                 self.publisher.send(NowPlayingInfo(
                     trackTitle: browserInfo.trackTitle,
                     artistName: browserInfo.artistName,
@@ -93,7 +105,14 @@ final class NowPlayingService {
         }
     }
 
-    @objc private func playbackNotification() {
+    @objc private func spotifyNotification() {
+        guard musicSource == .automatic || musicSource == .spotify else { return }
+        lastNotificationDate = Date()
+        pollNowPlaying()
+    }
+
+    @objc private func musicNotification() {
+        guard musicSource == .automatic || musicSource == .appleMusic else { return }
         lastNotificationDate = Date()
         pollNowPlaying()
     }
@@ -125,25 +144,46 @@ final class NowPlayingService {
     }
 
     func playPause() {
-        if isAppRunning("Spotify") { runAppleScript("tell application \"Spotify\" to playpause"); return }
-        if isAppRunning("Music") { runAppleScript("tell application \"Music\" to playpause"); return }
-        guard isChromeRunning() else { return }
-        chromeMediaCommand("var v=document.querySelector('video');if(v){if(v.paused){v.play()}else{v.pause()}}")
-        optimisticToggleBrowserPlayback()
+        switch musicSource {
+        case .spotify:
+            if isAppRunning("Spotify") { runAppleScript("tell application \"Spotify\" to playpause") }
+        case .appleMusic:
+            if isAppRunning("Music") { runAppleScript("tell application \"Music\" to playpause") }
+        case .automatic:
+            if isAppRunning("Spotify") { runAppleScript("tell application \"Spotify\" to playpause"); return }
+            if isAppRunning("Music") { runAppleScript("tell application \"Music\" to playpause"); return }
+            guard isChromeRunning() else { return }
+            chromeMediaCommand("var v=document.querySelector('video');if(v){if(v.paused){v.play()}else{v.pause()}}")
+            optimisticToggleBrowserPlayback()
+        }
     }
 
     func nextTrack() {
-        if isAppRunning("Spotify") { runAppleScript("tell application \"Spotify\" to next track"); return }
-        if isAppRunning("Music") { runAppleScript("tell application \"Music\" to next track"); return }
-        guard isChromeRunning() else { return }
-        chromeMediaCommand("document.querySelector('ytmusic-player-bar [aria-label=\"Next\"]')?.click()")
+        switch musicSource {
+        case .spotify:
+            if isAppRunning("Spotify") { runAppleScript("tell application \"Spotify\" to next track") }
+        case .appleMusic:
+            if isAppRunning("Music") { runAppleScript("tell application \"Music\" to next track") }
+        case .automatic:
+            if isAppRunning("Spotify") { runAppleScript("tell application \"Spotify\" to next track"); return }
+            if isAppRunning("Music") { runAppleScript("tell application \"Music\" to next track"); return }
+            guard isChromeRunning() else { return }
+            chromeMediaCommand("document.querySelector('ytmusic-player-bar [aria-label=\"Next\"]')?.click()")
+        }
     }
 
     func previousTrack() {
-        if isAppRunning("Spotify") { runAppleScript("tell application \"Spotify\" to previous track"); return }
-        if isAppRunning("Music") { runAppleScript("tell application \"Music\" to previous track"); return }
-        guard isChromeRunning() else { return }
-        chromeMediaCommand("document.querySelector('ytmusic-player-bar [aria-label=\"Previous\"]')?.click()")
+        switch musicSource {
+        case .spotify:
+            if isAppRunning("Spotify") { runAppleScript("tell application \"Spotify\" to previous track") }
+        case .appleMusic:
+            if isAppRunning("Music") { runAppleScript("tell application \"Music\" to previous track") }
+        case .automatic:
+            if isAppRunning("Spotify") { runAppleScript("tell application \"Spotify\" to previous track"); return }
+            if isAppRunning("Music") { runAppleScript("tell application \"Music\" to previous track"); return }
+            guard isChromeRunning() else { return }
+            chromeMediaCommand("document.querySelector('ytmusic-player-bar [aria-label=\"Previous\"]')?.click()")
+        }
     }
 
     private func isAppRunning(_ name: String) -> Bool {
@@ -203,7 +243,8 @@ final class NowPlayingService {
                 DispatchQueue.main.async { self.publisher.send(info) }
             } else {
                 self.lastSpotifyUri = nil
-                if MediaRemoteProvider.shared.lastInfo == nil && BrowserTabProvider.shared.lastInfo == nil {
+                if musicSource != .automatic ||
+                   (MediaRemoteProvider.shared.lastInfo == nil && BrowserTabProvider.shared.lastInfo == nil) {
                     DispatchQueue.main.async { self.sendEmpty() }
                 }
             }
@@ -237,30 +278,41 @@ final class NowPlayingService {
     }
 
     private func fetchNowPlaying() -> (NowPlayingInfo?, spotifyUri: String?) {
+        let spotifyBlock = """
+        if exists (process "Spotify") then
+            tell application "Spotify"
+                if player state is playing or player state is paused then
+                    if player state is playing then
+                        set stateStr to "playing"
+                    else
+                        set stateStr to "paused"
+                    end if
+                    set output to (name of current track) & "|||" & (artist of current track) & "|||" & (album of current track) & "|||" & (duration of current track) & "|||" & (player position) & "|||" & stateStr & "|||" & (spotify url of current track)
+                end if
+            end tell
+        end if
+        """
+
+        let musicBlock = """
+        if output is "" and exists (process "Music") then
+            tell application "Music"
+                if player state is playing then
+                    set output to (name of current track) & "|||" & (artist of current track) & "|||" & (album of current track) & "|||" & (duration of current track) & "|||" & (player position) & "|||playing"
+                else if player state is paused then
+                    set output to (name of current track) & "|||" & (artist of current track) & "|||" & (album of current track) & "|||" & (duration of current track) & "|||" & (player position) & "|||paused"
+                end if
+            end tell
+        end if
+        """
+
+        let querySpotify = musicSource == .automatic || musicSource == .spotify
+        let queryMusic = musicSource == .automatic || musicSource == .appleMusic
+
         let script = """
         set output to ""
         tell application "System Events"
-            if exists (process "Spotify") then
-                tell application "Spotify"
-                    if player state is playing or player state is paused then
-                        if player state is playing then
-                            set stateStr to "playing"
-                        else
-                            set stateStr to "paused"
-                        end if
-                        set output to (name of current track) & "|||" & (artist of current track) & "|||" & (album of current track) & "|||" & (duration of current track) & "|||" & (player position) & "|||" & stateStr & "|||" & (spotify url of current track)
-                    end if
-                end tell
-            end if
-            if output is "" and exists (process "Music") then
-                tell application "Music"
-                    if player state is playing then
-                        set output to (name of current track) & "|||" & (artist of current track) & "|||" & (album of current track) & "|||" & (duration of current track) & "|||" & (player position) & "|||playing"
-                    else if player state is paused then
-                        set output to (name of current track) & "|||" & (artist of current track) & "|||" & (album of current track) & "|||" & (duration of current track) & "|||" & (player position) & "|||paused"
-                    end if
-                end tell
-            end if
+        \(querySpotify ? spotifyBlock : "")
+        \(queryMusic ? musicBlock : "")
         end tell
         return output
         """

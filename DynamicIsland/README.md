@@ -10,7 +10,6 @@ A macOS menubar app that adds a Dynamic Island-style music controller to your Ma
 - **Now playing** — track info, album art, progress bar with elapsed/remaining time
 - **Playback controls** — play/pause, skip, previous
 - **Waveform visualization** — customizable style and colors
-- **Global hotkeys** — play/pause, next, previous, toggle island
 - **Customizable position** — left, center, or right of the notch
 - **Menu bar icon** — quick access to track info and settings
 - **No dock icon** — runs quietly in the background

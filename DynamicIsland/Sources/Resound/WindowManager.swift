@@ -98,6 +98,7 @@ final class WindowManager {
 
     private func makeWindow(for screen: NSScreen) -> NSWindow {
         let screenName = "\(screen.localizedName)"
+        let isInitiallyExpanded = !settings.autoHide
         let contentView = ContentView(onToggle: { [weak self] expanded in
             guard let self else { return }
             guard let win = self.windows[screenName] else { return }
@@ -127,12 +128,13 @@ final class WindowManager {
         window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
         window.contentView = hostingView
 
-        positionWindow(window, on: screen, height: collapsedHeight)
+        positionWindow(window, on: screen, height: isInitiallyExpanded ? expandedHeight : collapsedHeight)
         window.makeKeyAndOrderFront(nil)
         return window
     }
 
     private func scheduleCollapse(_ window: NSWindow) {
+        guard settings.autoHide else { return }
         collapseWork?.cancel()
         let work = DispatchWorkItem { [weak self, weak window] in
             guard let self, let win = window else { return }

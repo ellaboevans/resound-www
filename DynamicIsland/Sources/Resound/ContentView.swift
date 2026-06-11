@@ -29,6 +29,7 @@ struct ContentView: View {
             .fill(.black)
         )
         .onHover { hovering in
+            guard settings.autoHide else { return }
             collapseTask?.cancel()
             if hovering {
                 onToggle(true)
@@ -52,6 +53,19 @@ struct ContentView: View {
         .onDisappear {
             collapseTask?.cancel()
             collapseTask = nil
+        }
+        .onChange(of: settings.autoHide) { _, autoHide in
+            if !autoHide {
+                collapseTask?.cancel()
+                collapseTask = nil
+                isExpanded = true
+                expandedOpacity = 1
+                onToggle(true)
+            } else {
+                isExpanded = false
+                expandedOpacity = 0
+                onToggle(false)
+            }
         }
     }
 
