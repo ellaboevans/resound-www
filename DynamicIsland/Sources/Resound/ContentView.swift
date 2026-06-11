@@ -49,6 +49,10 @@ struct ContentView: View {
                 }
             }
         }
+        .onDisappear {
+            collapseTask?.cancel()
+            collapseTask = nil
+        }
     }
 
     private var pillView: some View {

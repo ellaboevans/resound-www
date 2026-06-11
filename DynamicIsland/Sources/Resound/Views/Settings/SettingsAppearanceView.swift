@@ -33,9 +33,10 @@ struct SettingsAppearanceView: View {
             }
 
             if settings.displayMode == .singleScreen {
+                let screens = NSScreen.screens
                 Picker("Screen", selection: $settings.selectedScreenName) {
-                    ForEach(NSScreen.screens, id: \.localizedName) { screen in
-                        Text(screen.localizedName).tag(screen.localizedName)
+                    ForEach(0..<screens.count, id: \.self) { i in
+                        Text(screens[i].localizedName).tag(screens[i].localizedName)
                     }
                 }
             }

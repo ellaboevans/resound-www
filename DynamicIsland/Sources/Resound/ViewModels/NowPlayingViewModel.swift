@@ -92,7 +92,7 @@ final class NowPlayingViewModel: ObservableObject {
         elapsedTimer?.invalidate()
         elapsedTimer = nil
         guard isPlaying else { syncElapsed(); return }
-        elapsedTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
+        elapsedTimer = Timer.scheduledTimer(withTimeInterval: 0.25, repeats: true) { [weak self] _ in
             Task { @MainActor [weak self] in
                 self?.syncElapsed()
             }

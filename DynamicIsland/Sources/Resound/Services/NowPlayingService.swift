@@ -1,4 +1,4 @@
-import Foundation
+import Cocoa
 import Combine
 
 struct NowPlayingInfo: Equatable {
@@ -107,22 +107,43 @@ final class NowPlayingService {
         cancellables.removeAll()
     }
 
+    private func optimisticToggleBrowserPlayback() {
+        guard let browserInfo = BrowserTabProvider.shared.lastInfo,
+              !browserInfo.trackTitle.isEmpty else { return }
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            self.publisher.send(NowPlayingInfo(
+                trackTitle: browserInfo.trackTitle,
+                artistName: browserInfo.artistName,
+                albumTitle: browserInfo.albumTitle,
+                duration: browserInfo.duration,
+                elapsedTime: browserInfo.elapsedTime,
+                isPlaying: !browserInfo.isPlaying,
+                artworkPath: browserInfo.artworkPath
+            ))
+        }
+    }
+
     func playPause() {
         if isAppRunning("Spotify") { runAppleScript("tell application \"Spotify\" to playpause"); return }
         if isAppRunning("Music") { runAppleScript("tell application \"Music\" to playpause"); return }
-        chromeMediaCommand("document.querySelector('[aria-label=\"Play\"], [aria-label=\"Pause\"]')?.click()")
+        guard isChromeRunning() else { return }
+        chromeMediaCommand("var v=document.querySelector('video');if(v){if(v.paused){v.play()}else{v.pause()}}")
+        optimisticToggleBrowserPlayback()
     }
 
     func nextTrack() {
         if isAppRunning("Spotify") { runAppleScript("tell application \"Spotify\" to next track"); return }
         if isAppRunning("Music") { runAppleScript("tell application \"Music\" to next track"); return }
-        chromeMediaCommand("document.querySelector('[aria-label=\"Next\"]')?.click()")
+        guard isChromeRunning() else { return }
+        chromeMediaCommand("document.querySelector('ytmusic-player-bar [aria-label=\"Next\"]')?.click()")
     }
 
     func previousTrack() {
         if isAppRunning("Spotify") { runAppleScript("tell application \"Spotify\" to previous track"); return }
         if isAppRunning("Music") { runAppleScript("tell application \"Music\" to previous track"); return }
-        chromeMediaCommand("document.querySelector('[aria-label=\"Previous\"]')?.click()")
+        guard isChromeRunning() else { return }
+        chromeMediaCommand("document.querySelector('ytmusic-player-bar [aria-label=\"Previous\"]')?.click()")
     }
 
     private func isAppRunning(_ name: String) -> Bool {
@@ -147,6 +168,18 @@ final class NowPlayingService {
         queue.async { [weak self] in
             _ = self?.appleScript.run(script)
         }
+    }
+
+    private func isChromeRunning() -> Bool {
+        NSWorkspace.shared.runningApplications.contains { $0.bundleIdentifier == "com.google.Chrome" }
+    }
+
+    private func isChromePid() -> pid_t? {
+        NSWorkspace.shared.runningApplications.first { $0.bundleIdentifier == "com.google.Chrome" }?.processIdentifier
+    }
+
+    private func isProcessAlive(_ pid: pid_t) -> Bool {
+        kill(pid, 0) == 0
     }
 
     private func pollNowPlaying() {

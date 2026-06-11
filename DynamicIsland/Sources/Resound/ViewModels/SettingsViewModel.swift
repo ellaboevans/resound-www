@@ -1,9 +1,12 @@
 import SwiftUI
+import ServiceManagement
 
 final class SettingsViewModel: ObservableObject {
     static let shared = SettingsViewModel()
 
-    @AppStorage("launchAtLogin") var launchAtLogin = false
+    @AppStorage("launchAtLogin") var launchAtLogin = false {
+        didSet { applyLaunchAtLogin() }
+    }
     @AppStorage("musicSource") var musicSourceRaw = MusicSource.automatic.rawValue
     @AppStorage("autoHide") var autoHide = true
 
@@ -13,6 +16,33 @@ final class SettingsViewModel: ObservableObject {
 
     @AppStorage("displayMode") var displayModeRaw = DisplayMode.allScreens.rawValue
     @AppStorage("selectedScreen") private var selectedScreenNameRaw = ""
+
+    init() {
+        syncLaunchAtLogin()
+    }
+
+    private func syncLaunchAtLogin() {
+        if #available(macOS 13, *) {
+            launchAtLogin = SMAppService.mainApp.status == .enabled
+        }
+    }
+
+    private func applyLaunchAtLogin() {
+        guard #available(macOS 13, *) else { return }
+        do {
+            if launchAtLogin {
+                if SMAppService.mainApp.status != .enabled {
+                    try SMAppService.mainApp.register()
+                }
+            } else {
+                if SMAppService.mainApp.status == .enabled {
+                    try SMAppService.mainApp.unregister()
+                }
+            }
+        } catch {
+            print("[Settings] launch at login error: \(error)")
+        }
+    }
 
     var musicSource: MusicSource {
         get { MusicSource(rawValue: musicSourceRaw) ?? .automatic }

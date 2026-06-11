@@ -18,7 +18,7 @@ final class MenuBarManager: NSObject, NSPopoverDelegate {
 
     func setup() {
         logger.info("Setting up status item")
-        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+        statusItem = NSStatusBar.system.statusItem(withLength: 24)
 
         if let button = statusItem.button {
             button.image = Self.loadIcon()
@@ -45,18 +45,32 @@ final class MenuBarManager: NSObject, NSPopoverDelegate {
     }
 
     private static func loadIcon() -> NSImage? {
-        if let iconPath = Bundle.main.path(forResource: "Resound", ofType: "icns"),
-           let icon = NSImage(contentsOfFile: iconPath) {
-            let resized = NSImage(size: NSSize(width: 18, height: 18))
-            resized.lockFocus()
-            icon.draw(in: NSRect(origin: .zero, size: NSSize(width: 18, height: 18)))
-            resized.unlockFocus()
-            return resized
-        }
+        let size = NSSize(width: 18, height: 18)
+        let image = NSImage(size: size, flipped: false) { rect in
+            let outer = rect.insetBy(dx: 1.5, dy: 1.5)
 
-        let fallback = NSImage(systemSymbolName: "music.note", accessibilityDescription: "Resound Menu")
-        fallback?.isTemplate = true
-        return fallback
+            let barCount = 3
+            let barWidth: CGFloat = 2
+            let spacing: CGFloat = 3.5
+            let totalWidth = CGFloat(barCount) * barWidth + CGFloat(barCount - 1) * spacing
+            let startX = outer.midX - totalWidth / 2
+            let maxHeight = outer.height - 6
+
+            let heights: [CGFloat] = [0.4, 1.0, 0.7]
+
+            for (i, relHeight) in heights.enumerated() {
+                let barHeight = max(maxHeight * relHeight, 2)
+                let x = startX + CGFloat(i) * (barWidth + spacing)
+                let y = outer.midY - barHeight / 2
+                let barRect = CGRect(x: x, y: y, width: barWidth, height: barHeight)
+                let barPath = NSBezierPath(roundedRect: barRect, xRadius: 1, yRadius: 1)
+                barPath.fill()
+            }
+
+            return true
+        }
+        image.isTemplate = true
+        return image
     }
 }
 
@@ -104,6 +118,7 @@ struct MenuBarPopoverView: View {
 
     var body: some View {
         VStack(spacing: 0) {
+            headerSection
             nowPlayingSection
             Divider()
             transportSection
@@ -112,6 +127,24 @@ struct MenuBarPopoverView: View {
         }
         .frame(width: 220)
         .padding(.vertical, 8)
+    }
+
+    private var headerSection: some View {
+        VStack(spacing: 0) {
+            HStack {
+                Text("Resound")
+                    .font(.headline)
+                    .fontWeight(.bold)
+                Spacer()
+                Text("v1.0")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+            Divider()
+                .padding(.horizontal, 12)
+        }
     }
 
     private var nowPlayingSection: some View {

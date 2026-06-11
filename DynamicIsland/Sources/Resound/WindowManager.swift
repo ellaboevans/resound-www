@@ -7,9 +7,10 @@ final class WindowManager {
     private var windows: [String: NSWindow] = [:]
     private let collapsedHeight: CGFloat = 38
     private let expandedHeight: CGFloat = 192
-    private var collapseWorkItem: DispatchWorkItem?
+    private var collapseWork: DispatchWorkItem?
     private let settings = SettingsViewModel.shared
     private var isResizing = false
+    private var isRebuilding = false
     private var cancellables = Set<AnyCancellable>()
 
     init() {}
@@ -49,22 +50,35 @@ final class WindowManager {
     }
 
     private func rebuildWindows() {
+        guard !isRebuilding else { return }
+        isRebuilding = true
+
         let targetScreens = resolveTargetScreens()
         let targetNames = Set(targetScreens.map(\.localizedName))
 
-        for (name, win) in windows where !targetNames.contains(name) {
-            win.close()
-            windows.removeValue(forKey: name)
+        for name in windows.keys {
+            guard let win = windows[name] else { continue }
+            if targetNames.contains(name) {
+                if !win.isVisible {
+                    win.makeKeyAndOrderFront(nil)
+                }
+            } else {
+                win.orderOut(nil)
+            }
         }
 
         for screen in targetScreens {
-            if let existing = windows[screen.localizedName] {
-                positionWindow(existing, on: screen, height: existing.frame.height)
+            let name = "\(screen.localizedName)"
+            if let existing = windows[name] {
+                let currentHeight = existing.frame.height
+                positionWindow(existing, on: screen, height: currentHeight < collapsedHeight + 10 ? collapsedHeight : currentHeight)
             } else {
                 let win = makeWindow(for: screen)
-                windows[screen.localizedName] = win
+                windows[name] = win
             }
         }
+
+        isRebuilding = false
     }
 
     private func resolveTargetScreens() -> [NSScreen] {
@@ -72,21 +86,26 @@ final class WindowManager {
         case .allScreens:
             return NSScreen.screens
         case .singleScreen:
-            if let matched = NSScreen.screens.first(where: { $0.localizedName == settings.selectedScreenName }) {
+            guard !NSScreen.screens.isEmpty else { return [] }
+            let name = settings.selectedScreenName
+            if !name.isEmpty,
+               let matched = NSScreen.screens.first(where: { $0.localizedName == name }) {
                 return [matched]
             }
-            return NSScreen.screens.first.map { [$0] } ?? []
+            return [NSScreen.screens[0]]
         }
     }
 
     private func makeWindow(for screen: NSScreen) -> NSWindow {
-        let screenName = screen.localizedName
+        let screenName = "\(screen.localizedName)"
         let contentView = ContentView(onToggle: { [weak self] expanded in
-            guard let self, let win = self.windows[screenName] else { return }
+            guard let self else { return }
+            guard let win = self.windows[screenName] else { return }
             if expanded {
-                self.expand(win, on: screen)
+                self.collapseWork?.cancel()
+                self.positionWindow(win, height: self.expandedHeight)
             } else {
-                self.collapse(win, on: screen)
+                self.scheduleCollapse(win)
             }
         })
 
@@ -113,21 +132,14 @@ final class WindowManager {
         return window
     }
 
-    private func expand(_ window: NSWindow, on screen: NSScreen) {
-        collapseWorkItem?.cancel()
-        positionWindow(window, on: screen, height: expandedHeight)
-    }
-
-    private func collapse(_ window: NSWindow, on screen: NSScreen) {
-        collapseWorkItem?.cancel()
-        let work = DispatchWorkItem { [weak self] in
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { [weak self] in
-                guard let self else { return }
-                self.positionWindow(window, on: screen, height: self.collapsedHeight)
-            }
+    private func scheduleCollapse(_ window: NSWindow) {
+        collapseWork?.cancel()
+        let work = DispatchWorkItem { [weak self, weak window] in
+            guard let self, let win = window else { return }
+            self.positionWindow(win, height: self.collapsedHeight)
         }
-        collapseWorkItem = work
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5, execute: work)
+        collapseWork = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.75, execute: work)
     }
 
     private func positionWindow(_ window: NSWindow, on screen: NSScreen, height: CGFloat) {
@@ -148,5 +160,10 @@ final class WindowManager {
         if window.frame.equalTo(frame) { return }
         window.setFrame(frame, display: true, animate: false)
         window.invalidateShadow()
+    }
+
+    private func positionWindow(_ window: NSWindow, height: CGFloat) {
+        guard let screen = window.screen ?? NSScreen.main ?? NSScreen.screens.first else { return }
+        positionWindow(window, on: screen, height: height)
     }
 }
