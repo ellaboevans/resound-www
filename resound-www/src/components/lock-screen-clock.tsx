@@ -31,7 +31,7 @@ export function LockScreenClock() {
   }, []);
 
   return (
-    <div className="absolute top-[8%] left-[35%] lg:left-1/2 z-20 -translate-x-1/2 text-center">
+    <div className="text-center">
       <p className="font-heading text-5xl leading-none font-light tracking-normal text-white/90 drop-shadow-lg sm:text-8xl lg:text-[7.5rem]">
         {clock.time}
       </p>
