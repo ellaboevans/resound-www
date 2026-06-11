@@ -449,7 +449,7 @@ function ProductStage() {
 
         <LockScreenClock />
 
-        <div className="absolute top-[30%] left-[39%] lg:left-1/2 z-10 w-[min(88%,360px)] -translate-x-1/2 rounded-[1.1rem] bg-black px-3.5 pt-3 pb-3.5 text-white shadow-2xl shadow-black/60 transition-transform duration-300 ease-out hover:-translate-y-1 sm:top-[31%] sm:w-[min(78%,400px)] sm:px-4.5 sm:pt-3.5 sm:pb-4.5 lg:top-[35%]">
+        <div className="absolute top-[30%] left-[35%] lg:left-1/2 z-10 w-[min(88%,326px)] -translate-x-1/2 rounded-[1.1rem] bg-black px-3.5 pt-3 pb-3.5 text-white shadow-2xl shadow-black/60 transition-transform duration-300 ease-out hover:-translate-y-1 sm:top-[31%] sm:w-[min(78%,400px)] sm:px-4.5 sm:pt-3.5 sm:pb-4.5 lg:top-[35%]">
           <div className="mb-3.5 flex items-start justify-between sm:mb-5">
             <div className="grid size-8 place-items-center overflow-hidden rounded-lg bg-white/6 shadow-lg shadow-black/40">
               <Image src="/resound/resound.svg" alt="" width={32} height={32} />
