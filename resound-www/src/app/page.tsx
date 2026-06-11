@@ -4,15 +4,18 @@ import {
   ArrowDownToLine,
   BadgeCheck,
   CircleDot,
+  Megaphone,
   Keyboard,
   Menu,
   Music2,
   PanelTop,
+  Pause,
   SlidersHorizontal,
-  Waves,
+  FastForward,
 } from "lucide-react";
 
 import { FaqSection } from "@/components/faq-section";
+import { LockScreenClock } from "@/components/lock-screen-clock";
 import {
   HeroReveal,
   Lift,
@@ -50,9 +53,9 @@ const features = [
     copy: "Shows album art, elapsed time, remaining time, and an at-a-glance progress bar.",
   },
   {
-    icon: Waves,
-    title: "Waveform styles",
-    copy: "Compact visualizers make the pill feel alive without taking over the screen.",
+    icon: CircleDot,
+    title: "Progress glance",
+    copy: "A compact progress state keeps the current track readable without crowding the notch.",
   },
   {
     icon: Keyboard,
@@ -204,13 +207,14 @@ const structuredData = {
 
 export default function Home() {
   return (
-    <main className="relative isolate min-h-screen overflow-hidden">
+    <main className="relative isolate min-h-screen overflow-x-clip overflow-y-visible">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
       />
       <DashedGridBackground />
       <div className="relative z-10">
+        <AnnouncementBanner />
         <Header />
         <Hero />
         <Features />
@@ -275,7 +279,7 @@ function DashedGridBackground() {
 
 function Header() {
   return (
-    <header className="fixed inset-x-0 top-0 z-20 border-b bg-background/80 backdrop-blur-xl">
+    <header className="fixed inset-x-0 top-10 z-20 border-b bg-background/80 backdrop-blur-xl">
       <div className="mx-auto flex h-16 w-[min(1160px,calc(100%-2.5rem))] items-center justify-between gap-5">
         <SmoothScrollLink
           href="#top"
@@ -321,12 +325,50 @@ function Header() {
   );
 }
 
+function AnnouncementBanner() {
+  const announcements = [
+    "Lock-screen controls are coming soon.",
+    "Richer shortcuts are on the roadmap.",
+    "More music sources are planned.",
+  ];
+
+  return (
+    <aside className="fixed inset-x-0 top-0 z-30 overflow-hidden border-b border-primary/20 bg-[radial-gradient(circle_at_18%_20%,rgba(184,241,196,0.2),transparent_28%),linear-gradient(90deg,#06100b,#0d1d13_48%,#07100c)] text-foreground shadow-lg shadow-black/20 backdrop-blur-xl">
+      <div className="mx-auto flex h-10 w-[min(1160px,calc(100%-2.5rem))] items-center justify-center gap-2 text-center text-xs font-semibold sm:text-sm">
+        <Megaphone className="size-3.5 shrink-0 text-primary" />
+
+        <div className="flex min-w-0 items-center gap-1.5 sm:hidden">
+          <span className="shrink-0 text-muted-foreground">Coming soon:</span>
+          <div className="h-5 min-w-0 overflow-hidden">
+            <div className="animate-announcement-carousel flex flex-col">
+              {announcements.map((announcement) => (
+                <span
+                  key={announcement}
+                  className="h-5 shrink-0 truncate leading-5 text-foreground">
+                  {announcement}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="hidden min-w-0 items-center gap-1.5 sm:flex">
+          <span className="truncate text-muted-foreground">Coming soon:</span>
+          <span className="truncate text-foreground">
+            lock-screen controls, richer shortcuts, and more music sources.
+          </span>
+        </div>
+      </div>
+    </aside>
+  );
+}
+
 function Hero() {
   return (
     <section
       id="top"
-      className="mx-auto flex min-h-dvh w-[min(1160px,calc(100%-2.5rem))] flex-col items-center justify-end pt-56 pb-16">
-      <div className="flex w-full flex-col items-center gap-12">
+      className="mx-auto flex min-h-dvh w-[min(1320px,calc(100%-1.5rem))] flex-col items-center justify-end pt-[9.5rem] pb-12 sm:w-[min(1320px,calc(100%-2.5rem))] sm:pt-[10.5rem] sm:pb-16">
+      <div className="flex w-full flex-col items-center gap-8">
         <div className="mx-auto flex flex-col items-center text-center">
           <HeroReveal>
             <h1 className="mt-5 text-balance font-heading text-6xl leading-[0.9] font-black tracking-normal sm:text-7xl lg:text-8xl xl:text-[8.2rem]">
@@ -374,7 +416,7 @@ function Hero() {
           </HeroReveal>
         </div>
 
-        <StageReveal className="w-full">
+        <StageReveal className="relative z-0 w-full max-w-none">
           <ProductStage />
         </StageReveal>
       </div>
@@ -384,32 +426,106 @@ function Hero() {
 
 function ProductStage() {
   return (
-    <div className="relative min-h-97.5 w-full max-w-5xl overflow-hidden rounded-lg border bg-card shadow-2xl shadow-black/40 sm:min-h-[470px] lg:min-h-[560px]">
-      <div className="flex h-10 items-center justify-between border-b bg-secondary/35 px-4 text-[11px] text-muted-foreground">
+    <div className="group/stage relative isolate mx-auto w-full max-w-full overflow-hidden rounded-lg border border-white/10 bg-[#030504] shadow-2xl shadow-black/50">
+      <div className="flex h-10 items-center justify-between border-b border-white/8 bg-[#070b09] px-4 text-[11px] text-white/50 backdrop-blur-xl">
         <div className="flex items-center gap-2" aria-hidden="true">
           <span className="size-3 rounded-full bg-[#ff5f57]" />
           <span className="size-3 rounded-full bg-[#ffbd2e]" />
           <span className="size-3 rounded-full bg-[#28c840]" />
         </div>
-        <div className="absolute left-1/2 -translate-x-1/2 font-medium text-foreground/70">
-          Resound Preview
+        <div className="absolute left-1/2 -translate-x-1/2 font-medium text-white/70">
+          Lock Screen Preview
         </div>
         <div className="flex items-center gap-3">
-          <span className="hidden sm:inline">Wi-Fi</span>
-          <span className="hidden sm:inline">Sound</span>
+          <span className="hidden sm:inline">100%</span>
           <span>Resound</span>
         </div>
       </div>
 
-      <div className="absolute top-10 left-1/2 flex h-12 w-[min(72%,386px)] -translate-x-1/2 items-center justify-between rounded-b-2xl border border-t-0 bg-black px-3.5 shadow-2xl shadow-black/60">
-        <span className="size-6 rounded-md border bg-primary" />
-        <span className="flex h-7 items-center gap-1">
-          <span className="h-3 w-1 rounded-full bg-foreground/75 animate-wave-a" />
-          <span className="h-6 w-1 rounded-full bg-foreground/75 animate-wave-b" />
-          <span className="h-4 w-1 rounded-full bg-foreground/75 animate-wave-c" />
-          <span className="h-7 w-1 rounded-full bg-foreground/75 animate-wave-a" />
-          <span className="h-3.5 w-1 rounded-full bg-foreground/75 animate-wave-b" />
-        </span>
+      <div className="relative aspect-10/13 min-h-[680px] overflow-hidden sm:aspect-4/3 sm:min-h-175 lg:aspect-video lg:min-h-180 xl:aspect-16/8.5">
+        <div className="absolute inset-0 bg-[linear-gradient(135deg,#07100c_0%,#0f2d1b_22%,#637034_45%,#d2a24d_64%,#1c120d_100%)] bg-size-[180%_180%] opacity-95 animate-lock-wallpaper" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_48%_22%,rgba(255,255,255,0.28),transparent_24%),radial-gradient(circle_at_66%_74%,rgba(17,24,39,0.72),transparent_38%),linear-gradient(to_bottom,rgba(0,0,0,0.18),rgba(0,0,0,0.62))]" />
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.08)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.08)_1px,transparent_1px)] bg-size-[72px_72px] opacity-10" />
+
+        <LockScreenClock />
+
+        <div className="absolute top-[30%] left-[39%] lg:left-1/2 z-10 w-[min(88%,360px)] -translate-x-1/2 rounded-[1.1rem] bg-black px-3.5 pt-3 pb-3.5 text-white shadow-2xl shadow-black/60 transition-transform duration-300 ease-out hover:-translate-y-1 sm:top-[31%] sm:w-[min(78%,400px)] sm:px-4.5 sm:pt-3.5 sm:pb-4.5 lg:top-[35%]">
+          <div className="mb-3.5 flex items-start justify-between sm:mb-5">
+            <div className="grid size-8 place-items-center overflow-hidden rounded-lg bg-white/6 shadow-lg shadow-black/40">
+              <Image src="/resound/resound.svg" alt="" width={32} height={32} />
+            </div>
+            <div
+              className="flex h-7 items-center gap-1.5 text-white/42"
+              aria-hidden="true">
+              <span className="h-5 w-1.5 rounded-full bg-current animate-lock-wave-a" />
+              <span className="h-7 w-1.5 rounded-full bg-current animate-lock-wave-b" />
+              <span className="h-4 w-1.5 rounded-full bg-current animate-lock-wave-c" />
+            </div>
+          </div>
+
+          <div className="flex min-w-0 items-start gap-3 sm:gap-3.5">
+            <div className="grid size-11 shrink-0 place-items-center overflow-hidden rounded-sm bg-[linear-gradient(135deg,#141816,#314334_42%,#c7b083)] shadow-lg shadow-black/30 transition-transform duration-300 ease-out hover:scale-[1.03] sm:size-14">
+              <Music2 className="size-5 text-white/78" strokeWidth={1.8} />
+            </div>
+            <div className="min-w-0 flex-1 pt-1">
+              <p className="truncate text-sm leading-tight font-bold tracking-[-0.01em] text-white sm:text-base">
+                Put It On God
+              </p>
+              <p className="mt-1.5 truncate text-xs leading-none font-semibold text-white/38">
+                AlorG & Sarkodie
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-3.5 sm:mt-4.5">
+            <div className="h-1.5 overflow-hidden rounded-full bg-white/12">
+              <div className="h-full w-[16%] rounded-full bg-white/60 animate-lock-progress" />
+            </div>
+            <div className="mt-2 flex justify-between text-xs leading-none font-bold text-white/38 sm:text-sm">
+              <span>0:31</span>
+              <span>-3:44</span>
+            </div>
+          </div>
+
+          <div className="mt-3.5 flex items-center justify-center gap-7 text-white/38 sm:mt-4 sm:gap-10">
+            <span className="grid size-9 place-items-center transition-transform duration-200 ease-out hover:scale-110 active:scale-95">
+              <FastForward
+                className="size-6 fill-current -scale-x-100"
+                strokeWidth={0}
+              />
+            </span>
+            <span className="grid size-10 place-items-center rounded-full bg-white text-black shadow-lg shadow-black/25 transition-transform duration-200 ease-out hover:scale-105 active:scale-95 sm:size-11">
+              <Pause className="size-4.5 fill-current" strokeWidth={2.5} />
+            </span>
+            <span className="grid size-9 place-items-center transition-transform duration-200 ease-out hover:scale-110 active:scale-95">
+              <FastForward className="size-6 fill-current" strokeWidth={0} />
+            </span>
+          </div>
+        </div>
+
+        <div className="absolute bottom-[4%] left-[39%] lg:left-1/2 z-30 flex -translate-x-1/2 flex-col items-center gap-2.5 sm:bottom-[5%] sm:gap-3 lg:bottom-[4.5%]">
+          <div className="grid size-14 place-items-center rounded-full border border-white/16 bg-[#050806]/76 p-1 shadow-2xl shadow-black/60 ring-1 ring-primary/10 backdrop-blur-xl sm:size-12">
+            <Image
+              src="/resound/resound.svg"
+              alt=""
+              width={64}
+              height={64}
+              className="rounded-full"
+            />
+          </div>
+          <div className="text-center">
+            <p className="text-sm font-bold text-white">Small God</p>
+          </div>
+          <div className="relative w-[min(14rem,78vw)]">
+            <div className="h-8 rounded-lg border border-white/12 bg-[#050806]/72 px-3 py-2 text-[11px] font-medium text-white/42 shadow-inner backdrop-blur-xl">
+              Enter Password
+            </div>
+            <span className="absolute top-1/2 right-2.5 size-4 -translate-y-1/2 rounded-full border border-white/20" />
+          </div>
+          <p className="pt-1 text-[9px] font-semibold tracking-[0.2em] text-white/38 uppercase">
+            Touch ID or enter password
+          </p>
+        </div>
       </div>
     </div>
   );

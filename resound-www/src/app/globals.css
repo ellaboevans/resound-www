@@ -166,6 +166,33 @@
   .animate-wave-c {
     animation: wave-c 1.35s ease-in-out infinite alternate;
   }
+
+  .animate-lock-wallpaper {
+    animation: lock-wallpaper 18s ease-in-out infinite;
+  }
+
+  .animate-lock-wave-a {
+    animation: lock-wave 1.15s ease-in-out infinite alternate;
+    transform-origin: center;
+  }
+
+  .animate-lock-wave-b {
+    animation: lock-wave 0.9s ease-in-out 0.12s infinite alternate;
+    transform-origin: center;
+  }
+
+  .animate-lock-wave-c {
+    animation: lock-wave 1.3s ease-in-out 0.24s infinite alternate;
+    transform-origin: center;
+  }
+
+  .animate-lock-progress {
+    animation: lock-progress 4.8s ease-in-out infinite;
+  }
+
+  .animate-announcement-carousel {
+    animation: announcement-carousel 9s ease-in-out infinite;
+  }
 }
 
 @keyframes wave-a {
@@ -186,5 +213,66 @@
   to {
     transform: scaleY(0.42);
     opacity: 0.34;
+  }
+}
+
+@keyframes lock-wallpaper {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+@keyframes lock-wave {
+  from {
+    transform: scaleY(0.58);
+    opacity: 0.42;
+  }
+
+  to {
+    transform: scaleY(1);
+    opacity: 0.78;
+  }
+}
+
+@keyframes lock-progress {
+  0%,
+  100% {
+    width: 16%;
+  }
+
+  50% {
+    width: 26%;
+  }
+}
+
+@keyframes announcement-carousel {
+  0%,
+  26% {
+    transform: translateY(0);
+  }
+
+  33%,
+  59% {
+    transform: translateY(-33.333%);
+  }
+
+  66%,
+  92% {
+    transform: translateY(-66.666%);
+  }
+
+  100% {
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-announcement-carousel {
+    animation: none;
   }
 }
