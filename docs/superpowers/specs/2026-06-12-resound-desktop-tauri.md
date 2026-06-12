@@ -92,7 +92,7 @@ to the frontend as a data URL or file path for the webview to display.
 |---------|---------|-------|
 | Spotify detection | `Windows.Media.Control` | MPRIS D-Bus |
 | Chrome/YTM detection | `Windows.Media.Control` | MPRIS D-Bus |
-| Volume control | `CoreAudio API` → WASAPI | ALSA/PulseAudio |
+| Volume control | System audio API (WASAPI) | ALSA/PulseAudio |
 | Launch at login | Registry / Startup folder | XDG autostart |
 | System tray | Tauri built-in | Tauri built-in |
 
