@@ -27,3 +27,7 @@ windows = { version = "0.58", features = [
     "Foundation_Collections",
     "Storage_Streams",
 ]}
+
+[target.'cfg(target_os = "linux")'.dependencies]
+zbus = { version = "4", features = ["blocking"] }
+reqwest = { version = "0.12", features = ["blocking"] }
