@@ -12,7 +12,7 @@
     "windows": [
       {
         "title": "Resound",
-        "width": 300,
+        "width": 280,
         "height": 48,
         "decorations": false,
         "transparent": true,
@@ -20,7 +20,6 @@
         "skipTaskbar": true,
         "focusable": false,
         "resizable": false,
-        "center": true,
         "visible": true
       }
     ],

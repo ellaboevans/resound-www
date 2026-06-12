@@ -1,7 +1,9 @@
 use std::sync::Mutex;
 use serde::{Deserialize, Serialize};
+use tauri::Manager;
 
 mod media;
+mod positioning;
 mod tray;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -94,6 +96,9 @@ pub fn run() {
         ])
         .setup(|app| {
             let _ = tray::setup_tray(app.handle());
+            if let Some(window) = app.get_webview_window("main") {
+                positioning::center_window_at_top(&window);
+            }
             Ok(())
         })
         .run(tauri::generate_context!())
