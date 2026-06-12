@@ -28,7 +28,6 @@ final class AppCoordinator {
         nowPlaying.start()
         windowManager.show()
         menuBarManager.setup()
-        VolumeEventTapManager.shared.start()
     }
 
     func stop() {
