@@ -26,10 +26,10 @@ impl WindowsMediaProvider {
     fn ensure_manager(&self) -> Option<GlobalSystemMediaTransportControlsSessionManager> {
         let mut guard = self.manager.lock().ok()?;
         if guard.is_none() {
-            *guard = futures::executor::block_on(
-                GlobalSystemMediaTransportControlsSessionManager::RequestAsync(),
-            )
-            .ok();
+            *guard = GlobalSystemMediaTransportControlsSessionManager::RequestAsync()
+                .ok()?
+                .get()
+                .ok();
         }
         guard.clone()
     }
@@ -42,11 +42,10 @@ impl MediaProvider for WindowsMediaProvider {
             None => return NowPlayingInfo::default(),
         };
 
-        let display_props =
-            match futures::executor::block_on(session.TryGetMediaPropertiesAsync()) {
-                Ok(props) => props,
-                _ => return NowPlayingInfo::default(),
-            };
+        let display_props = match session.TryGetMediaPropertiesAsync().ok().and_then(|op| op.get().ok()) {
+            Some(props) => props,
+            _ => return NowPlayingInfo::default(),
+        };
 
         let title = display_props.Title().unwrap_or_default().to_string();
         let artist = display_props.Artist().unwrap_or_default().to_string();
@@ -94,10 +93,10 @@ impl MediaProvider for WindowsMediaProvider {
                 .and_then(|p| p.PlaybackStatus().ok());
             match status {
                 Some(GlobalSystemMediaTransportControlsSessionPlaybackStatus::Playing) => {
-                    let _ = futures::executor::block_on(session.TryPauseAsync());
+                    if let Ok(op) = session.TryPauseAsync() { let _ = op.get(); }
                 }
                 _ => {
-                    let _ = futures::executor::block_on(session.TryPlayAsync());
+                    if let Ok(op) = session.TryPlayAsync() { let _ = op.get(); }
                 }
             }
         }
@@ -105,13 +104,13 @@ impl MediaProvider for WindowsMediaProvider {
 
     fn next_track(&self) {
         if let Some(session) = self.get_current_session() {
-            let _ = futures::executor::block_on(session.TrySkipNextAsync());
+            if let Ok(op) = session.TrySkipNextAsync() { let _ = op.get(); }
         }
     }
 
     fn prev_track(&self) {
         if let Some(session) = self.get_current_session() {
-            let _ = futures::executor::block_on(session.TrySkipPreviousAsync());
+            if let Ok(op) = session.TrySkipPreviousAsync() { let _ = op.get(); }
         }
     }
 
@@ -132,14 +131,14 @@ fn timespan_to_secs(ts: TimeSpan) -> f64 {
 fn fetch_artwork_base64(
     props: &windows::Media::MediaProperties::MediaItemDisplayProperties,
 ) -> String {
-    use windows::Storage::Streams::{DataReader, InputStreamOptions};
+    use windows::Storage::Streams::DataReader;
 
     let thumbnail = match props.Thumbnail().ok().and_then(|t| t.ok()) {
         Some(t) => t,
         None => return String::new(),
     };
 
-    let stream = match futures::executor::block_on(thumbnail.OpenReadAsync()).ok() {
+    let stream = match thumbnail.OpenReadAsync().ok().and_then(|op| op.get().ok()) {
         Some(s) => s,
         None => return String::new(),
     };
@@ -154,7 +153,7 @@ fn fetch_artwork_base64(
         _ => return String::new(),
     };
 
-    let _ = futures::executor::block_on(reader.LoadAsync(size)).ok();
+    if let Ok(op) = reader.LoadAsync(size) { let _ = op.get(); }
     let mut buffer = vec![0u8; size as usize];
     if reader.ReadBytes(&mut buffer).is_err() {
         return String::new();
