@@ -28,6 +28,8 @@ pub trait MediaProvider: Send + Sync {
     fn set_volume(&self, level: f64);
 }
 
+pub mod artwork_cache;
+
 #[cfg(target_os = "windows")]
 mod windows;
 #[cfg(target_os = "linux")]
