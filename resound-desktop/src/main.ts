@@ -1,5 +1,13 @@
 import { createApp } from 'vue'
-import './style.css'
 import App from './App.vue'
+import { useVolume } from './composables/useVolume'
+import { useVolumeOverlay } from './composables/useVolumeOverlay'
+import { useSettings } from './composables/useSettings'
+import './assets/styles.css'
 
-createApp(App).mount('#app')
+const app = createApp(App)
+app.mount('#app')
+
+useVolume().init()
+useVolumeOverlay().init()
+useSettings().load()
