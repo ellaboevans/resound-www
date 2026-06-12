@@ -7,6 +7,7 @@ mod positioning;
 mod tray;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct AppSettings {
     pub auto_hide: bool,
     pub launch_at_login: bool,
@@ -30,51 +31,67 @@ pub struct AppState {
 
 #[tauri::command]
 fn get_now_playing(state: tauri::State<'_, Mutex<AppState>>) -> media::NowPlayingInfo {
-    let app_state = state.lock().unwrap();
-    app_state.media_manager.get_current_track()
+    if let Some(app_state) = state.lock().ok() {
+        app_state.media_manager.get_current_track()
+    } else {
+        media::NowPlayingInfo::default()
+    }
 }
 
 #[tauri::command]
 fn play_pause(state: tauri::State<'_, Mutex<AppState>>) {
-    let app_state = state.lock().unwrap();
-    app_state.media_manager.play_pause();
+    if let Some(app_state) = state.lock().ok() {
+        app_state.media_manager.play_pause();
+    }
 }
 
 #[tauri::command]
 fn next_track(state: tauri::State<'_, Mutex<AppState>>) {
-    let app_state = state.lock().unwrap();
-    app_state.media_manager.next_track();
+    if let Some(app_state) = state.lock().ok() {
+        app_state.media_manager.next_track();
+    }
 }
 
 #[tauri::command]
 fn prev_track(state: tauri::State<'_, Mutex<AppState>>) {
-    let app_state = state.lock().unwrap();
-    app_state.media_manager.prev_track();
+    if let Some(app_state) = state.lock().ok() {
+        app_state.media_manager.prev_track();
+    }
 }
 
 #[tauri::command]
 fn get_volume(state: tauri::State<'_, Mutex<AppState>>) -> media::VolumeInfo {
-    let app_state = state.lock().unwrap();
-    app_state.media_manager.volume()
+    if let Some(app_state) = state.lock().ok() {
+        app_state.media_manager.volume()
+    } else {
+        media::VolumeInfo::default()
+    }
 }
 
 #[tauri::command]
 fn set_volume(level: f64, state: tauri::State<'_, Mutex<AppState>>) {
-    let app_state = state.lock().unwrap();
-    app_state.media_manager.set_volume(level);
+    if let Some(app_state) = state.lock().ok() {
+        app_state.media_manager.set_volume(level);
+    }
 }
 
 #[tauri::command]
 fn get_settings(state: tauri::State<'_, Mutex<AppState>>) -> AppSettings {
-    let app_state = state.lock().unwrap();
-    let s = app_state.settings.lock().unwrap().clone();
-    s
+    if let Some(app_state) = state.lock().ok() {
+        if let Ok(s) = app_state.settings.lock() {
+            return s.clone();
+        }
+    }
+    AppSettings::default()
 }
 
 #[tauri::command]
 fn set_settings(settings: AppSettings, state: tauri::State<'_, Mutex<AppState>>) {
-    let app_state = state.lock().unwrap();
-    *app_state.settings.lock().unwrap() = settings;
+    if let Some(app_state) = state.lock().ok() {
+        if let Ok(mut s) = app_state.settings.lock() {
+            *s = settings;
+        }
+    }
 }
 
 pub fn run() {
