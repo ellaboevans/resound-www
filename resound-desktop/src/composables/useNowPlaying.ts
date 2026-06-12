@@ -40,7 +40,7 @@ let unlisten: (() => void) | null = null
 let pollInterval: ReturnType<typeof setInterval> | null = null
 
 export function useNowPlaying() {
-  async function fetch() {
+  async function fetchNowPlaying() {
     state.loading = true
     try {
       state.current = await invoke<NowPlayingInfo>('get_now_playing')
@@ -54,22 +54,22 @@ export function useNowPlaying() {
 
   async function playPause() {
     await invoke('play_pause')
-    await fetch()
+    await fetchNowPlaying()
   }
 
   async function nextTrack() {
     await invoke('next_track')
-    await fetch()
+    await fetchNowPlaying()
   }
 
   async function prevTrack() {
     await invoke('prev_track')
-    await fetch()
+    await fetchNowPlaying()
   }
 
   onMounted(async () => {
-    await fetch()
-    pollInterval = setInterval(fetch, 1000)
+    await fetchNowPlaying()
+    pollInterval = setInterval(fetchNowPlaying, 1000)
     unlisten = await listen<NowPlayingInfo>('now-playing-changed', (event) => {
       state.current = event.payload
     })
@@ -82,7 +82,7 @@ export function useNowPlaying() {
 
   return {
     state,
-    fetch,
+    fetchNowPlaying,
     playPause,
     nextTrack,
     prevTrack,

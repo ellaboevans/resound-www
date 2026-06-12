@@ -1,4 +1,4 @@
-import { reactive } from 'vue'
+import { reactive, onUnmounted } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
 import { listen } from '@tauri-apps/api/event'
 
@@ -41,18 +41,17 @@ export function useVolume() {
     })
   }
 
-  function cleanup() {
+  onUnmounted(() => {
     if (unlisten) {
       unlisten()
       unlisten = null
     }
-  }
+  })
 
   return {
     state,
     fetchVolume,
     setVolume,
     init,
-    cleanup,
   }
 }
