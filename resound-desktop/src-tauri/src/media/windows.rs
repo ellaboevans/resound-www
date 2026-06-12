@@ -24,7 +24,7 @@ impl WindowsMediaProvider {
     }
 
     fn ensure_manager(&self) -> Option<GlobalSystemMediaTransportControlsSessionManager> {
-        let mut guard = self.manager.lock().unwrap();
+        let mut guard = self.manager.lock().ok()?;
         if guard.is_none() {
             *guard = futures::executor::block_on(
                 GlobalSystemMediaTransportControlsSessionManager::RequestAsync(),
@@ -42,15 +42,15 @@ impl MediaProvider for WindowsMediaProvider {
             None => return NowPlayingInfo::default(),
         };
 
-        let media_props =
+        let display_props =
             match futures::executor::block_on(session.TryGetMediaPropertiesAsync()) {
                 Ok(props) => props,
                 _ => return NowPlayingInfo::default(),
             };
 
-        let title = media_props.Title().unwrap_or_default().to_string();
-        let artist = media_props.Artist().unwrap_or_default().to_string();
-        let album = media_props.AlbumTitle().unwrap_or_default().to_string();
+        let title = display_props.Title().unwrap_or_default().to_string();
+        let artist = display_props.Artist().unwrap_or_default().to_string();
+        let album = display_props.AlbumTitle().unwrap_or_default().to_string();
 
         let playback = session.GetPlaybackInfo().ok();
         let is_playing = playback
@@ -67,7 +67,7 @@ impl MediaProvider for WindowsMediaProvider {
             (0.0, 0.0)
         };
 
-        let artwork_b64 = fetch_artwork_base64(&media_props);
+        let artwork_base64 = fetch_artwork_base64(&display_props);
 
         NowPlayingInfo {
             track_title: title,
@@ -81,7 +81,7 @@ impl MediaProvider for WindowsMediaProvider {
             },
             duration,
             volume: 50,
-            artwork_base64: artwork_b64,
+            artwork_base64,
             source: "Windows.Media.Control".into(),
         }
     }
@@ -149,10 +149,10 @@ fn fetch_artwork_base64(
         _ => return String::new(),
     };
 
-    let size = stream.Size() as u32;
-    if size == 0 || size > 5_000_000 {
-        return String::new();
-    }
+    let size = match u32::try_from(stream.Size()) {
+        Ok(s) if s > 0 && s <= 5_000_000 => s,
+        _ => return String::new(),
+    };
 
     let _ = futures::executor::block_on(reader.LoadAsync(size)).ok();
     let mut buffer = vec![0u8; size as usize];

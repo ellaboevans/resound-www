@@ -27,4 +27,3 @@ windows = { version = "0.58", features = [
     "Foundation_Collections",
     "Storage_Streams",
 ]}
-base64 = "0.22"
