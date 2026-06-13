@@ -583,7 +583,7 @@ function DownloadMatrix() {
   return (
     <section className="pb-16 sm:pb-20">
       <div className="mx-auto w-[min(1160px,calc(100%-2.5rem))]">
-        <div className="grid gap-8 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
           {platforms.map((platform, index) => (
             <Reveal key={platform.id} delay={index * 0.06}>
               <PlatformColumn platform={platform} />
