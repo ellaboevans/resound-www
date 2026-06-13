@@ -53,7 +53,7 @@ function diffUpdate(data: NowPlayingInfo) {
   if (c.artist_name !== data.artist_name) c.artist_name = data.artist_name;
   if (c.album_title !== data.album_title) c.album_title = data.album_title;
   if (c.is_playing !== data.is_playing) c.is_playing = data.is_playing;
-  if (c.duration !== data.duration) c.duration = data.duration;
+  if (data.duration > 0 && c.duration !== data.duration) c.duration = data.duration;
   if (c.volume !== data.volume) c.volume = data.volume;
   if (c.source !== data.source) c.source = data.source;
   if (c.artwork_base64 !== data.artwork_base64)
@@ -61,23 +61,26 @@ function diffUpdate(data: NowPlayingInfo) {
 }
 
 function applyBackendData(data: NowPlayingInfo) {
-  const newPosSec = data.progress * data.duration;
-  const newTrack =
-    data.track_title !== prevTrackTitle || data.duration !== prevDuration;
-  prevTrackTitle = data.track_title;
-  prevDuration = data.duration;
-
   diffUpdate(data);
-  smoothDurationSec = data.duration;
 
-  if (
-    newTrack ||
-    (data.is_playing && !smoothPlaying) ||
-    Math.abs(newPosSec - smoothPosSec) > 2.0
-  ) {
-    anchorPosSec = newPosSec;
-    anchorTime = performance.now();
-    smoothPosSec = newPosSec;
+  if (data.duration > 0) {
+    const newPosSec = data.progress * data.duration;
+    const newTrack =
+      data.track_title !== prevTrackTitle || data.duration !== prevDuration;
+    prevTrackTitle = data.track_title;
+    prevDuration = data.duration;
+
+    smoothDurationSec = data.duration;
+
+    if (
+      newTrack ||
+      (data.is_playing && !smoothPlaying) ||
+      Math.abs(newPosSec - smoothPosSec) > 2.0
+    ) {
+      anchorPosSec = newPosSec;
+      anchorTime = performance.now();
+      smoothPosSec = newPosSec;
+    }
   }
 
   smoothPlaying = data.is_playing;
