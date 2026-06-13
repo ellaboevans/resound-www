@@ -581,7 +581,7 @@ function StatusRow({
 
 function DownloadMatrix() {
   return (
-    <section className="pb-16 sm:pb-20">
+    <section className="overflow-x-hidden pb-16 sm:pb-20">
       <div className="mx-auto w-[min(1160px,calc(100%-2.5rem))]">
         <div className="grid gap-8 lg:grid-cols-3">
           {platforms.map((platform, index) => (
