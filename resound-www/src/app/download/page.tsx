@@ -581,7 +581,7 @@ function StatusRow({
 
 function DownloadMatrix() {
   return (
-    <section className="overflow-x-hidden pb-16 sm:pb-20">
+    <section className="pb-16 sm:pb-20">
       <div className="mx-auto w-[min(1160px,calc(100%-2.5rem))]">
         <div className="grid gap-8 lg:grid-cols-3">
           {platforms.map((platform, index) => (
@@ -601,7 +601,7 @@ function PlatformColumn({
   const Icon = platform.icon;
 
   return (
-    <article id={platform.id} className="min-w-0">
+    <article id={platform.id} className="min-w-0 max-w-full overflow-x-hidden">
       <div className="mb-4 flex items-end justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3">
           <Icon className="size-6 shrink-0 text-foreground" />
