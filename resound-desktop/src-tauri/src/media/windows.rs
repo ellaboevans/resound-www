@@ -63,7 +63,8 @@ impl MediaProvider for WindowsMediaProvider {
             let stream = thumbnail.OpenReadAsync().ok().and_then(|op| op.get().ok())?;
 
             let reader = DataReader::CreateDataReader(&stream).ok()?;
-            let size = u32::try_from(stream.Size()).ok().filter(|&s| s > 0 && s <= 5_000_000)?;
+            let s = stream.Size().ok()?;
+            let size = u32::try_from(s).ok().filter(|&s| s > 0 && s <= 5_000_000)?;
 
             if let Ok(op) = reader.LoadAsync(size) { let _ = op.get(); }
             let mut buffer = vec![0u8; size as usize];
