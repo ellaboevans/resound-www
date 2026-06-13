@@ -1,17 +1,17 @@
 <script setup lang="ts">
-import { useNowPlaying } from '../composables/useNowPlaying'
-import SettingsPanel from './SettingsPanel.vue'
+import { useNowPlaying } from "../composables/useNowPlaying";
+import SettingsPanel from "./SettingsPanel.vue";
 
-const { state } = useNowPlaying()
+const { state } = useNowPlaying();
 
 function artworkUrl(): string {
-  if (!state.current.artwork_base64) return ''
-  return `data:image/jpeg;base64,${state.current.artwork_base64}`
+  if (!state.current.artwork_base64) return "";
+  return `data:image/jpeg;base64,${state.current.artwork_base64}`;
 }
 </script>
 
 <template>
-  <div class="pill">
+  <div class="pill" data-tauri-drag-region>
     <div class="pill-content">
       <div class="artwork" v-if="state.current.track_title">
         <img v-if="artworkUrl()" :src="artworkUrl()" alt="" />
@@ -35,7 +35,6 @@ function artworkUrl(): string {
   justify-content: center;
   width: 100%;
   height: 100%;
-  -webkit-app-region: drag;
 }
 
 .pill-content {
@@ -89,7 +88,9 @@ function artworkUrl(): string {
   height: 30%;
   background: rgba(255, 255, 255, 0.15);
   border-radius: 2px;
-  transition: height 0.3s, background 0.3s;
+  transition:
+    height 0.3s,
+    background 0.3s;
 }
 
 .playing .bar {
@@ -112,7 +113,12 @@ function artworkUrl(): string {
 }
 
 @keyframes wave {
-  0%, 100% { height: 20%; }
-  50% { height: 80%; }
+  0%,
+  100% {
+    height: 20%;
+  }
+  50% {
+    height: 80%;
+  }
 }
 </style>

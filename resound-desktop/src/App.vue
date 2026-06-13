@@ -1,41 +1,50 @@
 <script setup lang="ts">
-import { ref, watch, provide } from 'vue'
-import { invoke } from '@tauri-apps/api/core'
-import Pill from './components/Pill.vue'
-import ExpandedPanel from './components/ExpandedPanel.vue'
+import { ref, watch, provide } from "vue";
+import { invoke } from "@tauri-apps/api/core";
+import Pill from "./components/Pill.vue";
+import ExpandedPanel from "./components/ExpandedPanel.vue";
 
+const expanded = ref(false);
+provide("expanded", expanded);
+const COLLAPSED_H = 48;
+const EXPANDED_H = 280;
+const W = 280;
 
-const expanded = ref(false)
-provide('expanded', expanded)
-const COLLAPSED_H = 48
-const EXPANDED_H = 280
-const W = 280
-
-let collapseTimer: ReturnType<typeof setTimeout> | null = null
+let collapseTimer: ReturnType<typeof setTimeout> | null = null;
 
 async function resize(h: number) {
-  try { await invoke('set_window_size', { width: W, height: h }) }
-  catch {}
+  try {
+    await invoke("set_window_size", { width: W, height: h });
+  } catch {}
 }
 
 function onEnter() {
-  if (collapseTimer) { clearTimeout(collapseTimer); collapseTimer = null }
-  if (!expanded.value) expanded.value = true
+  if (collapseTimer) {
+    clearTimeout(collapseTimer);
+    collapseTimer = null;
+  }
+  if (!expanded.value) expanded.value = true;
 }
 
 function onLeave() {
   collapseTimer = setTimeout(() => {
-    expanded.value = false
-    collapseTimer = null
-  }, 80)
+    expanded.value = false;
+    collapseTimer = null;
+  }, 80);
 }
 
-watch(expanded, (v) => resize(v ? EXPANDED_H : COLLAPSED_H), { immediate: false })
+watch(expanded, (v) => resize(v ? EXPANDED_H : COLLAPSED_H), {
+  immediate: false,
+});
 </script>
 
 <template>
   <div class="window">
-    <div class="container" :class="{ expanded }" @mouseenter="onEnter" @mouseleave="onLeave">
+    <div
+      class="container"
+      :class="{ expanded }"
+      @mouseenter="onEnter"
+      @mouseleave="onLeave">
       <Pill />
       <Transition name="panel">
         <div class="panel-wrap" v-if="expanded">
@@ -63,7 +72,6 @@ watch(expanded, (v) => resize(v ? EXPANDED_H : COLLAPSED_H), { immediate: false 
   left: 50%;
   transform: translate(-50%, 0);
   width: 100%;
-  transition: all 0.2s ease;
 }
 
 .container.expanded {
@@ -80,10 +88,11 @@ watch(expanded, (v) => resize(v ? EXPANDED_H : COLLAPSED_H), { immediate: false 
   margin: 0;
 }
 
-
 .panel-enter-active,
 .panel-leave-active {
-  transition: max-height 0.2s ease, opacity 0.15s ease;
+  transition:
+    max-height 0.2s ease,
+    opacity 0.15s ease;
   max-height: 300px;
 }
 

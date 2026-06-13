@@ -22,37 +22,67 @@ fn find_mpris_players(conn: &Connection) -> Vec<String> {
     names.into_iter().filter(|n| n.contains("org.mpris.MediaPlayer2")).collect()
 }
 
-fn get_playback_status(conn: &Connection, name: &str) -> String {
-    let proxy_path = "/org/mpris/MediaPlayer2";
+fn get_property(conn: &Connection, player_name: &str, property: &str) -> zbus::Result<Value<'_>> {
     conn.call_method(
-        Some(name),
-        proxy_path,
-        Some("org.mpris.MediaPlayer2.Player"),
-        "PlaybackStatus",
-        &(),
-    ).and_then(|r| r.body().deserialize()).unwrap_or_default()
+        Some(player_name),
+        "/org/mpris/MediaPlayer2",
+        Some("org.freedesktop.DBus.Properties"),
+        "Get",
+        &("org.mpris.MediaPlayer2.Player", property),
+    ).and_then(|m| m.body().deserialize())
 }
 
-fn get_position(conn: &Connection, name: &str) -> i64 {
-    let proxy_path = "/org/mpris/MediaPlayer2";
-    conn.call_method(
-        Some(name),
-        proxy_path,
-        Some("org.mpris.MediaPlayer2.Player"),
-        "Position",
-        &(),
-    ).and_then(|r| r.body().deserialize()).unwrap_or(0)
+fn get_playback_status(conn: &Connection, player_name: &str) -> String {
+    match get_property(conn, player_name, "PlaybackStatus") {
+        Ok(Value::Str(s)) => s.to_string(),
+        _ => String::new(),
+    }
+}
+
+fn get_position_us(conn: &Connection, player_name: &str) -> i64 {
+    match get_property(conn, player_name, "Position") {
+        Ok(Value::I64(n)) => n,
+        _ => 0,
+    }
 }
 
 fn call_player_method(conn: &Connection, name: &str, method: &str) {
-    let proxy_path = "/org/mpris/MediaPlayer2";
     let _: zbus::Result<()> = conn.call_method(
         Some(name),
-        proxy_path,
+        "/org/mpris/MediaPlayer2",
         Some("org.mpris.MediaPlayer2.Player"),
         method,
         &(),
     ).and_then(|_| Ok(()));
+}
+
+fn get_metadata_string(metadata: &HashMap<String, Value<'_>>, key: &str) -> String {
+    metadata.get(key)
+        .and_then(|v| v.downcast_ref::<String>().ok())
+        .cloned()
+        .unwrap_or_default()
+}
+
+fn get_metadata_artist(metadata: &HashMap<String, Value<'_>>) -> String {
+    match metadata.get("xesam:artist") {
+        Some(v) => {
+            if let Ok(artists) = v.downcast_ref::<Vec<String>>() {
+                artists.join(", ")
+            } else if let Ok(s) = v.downcast_ref::<String>() {
+                s.clone()
+            } else {
+                String::new()
+            }
+        }
+        None => String::new(),
+    }
+}
+
+fn get_metadata_i64(metadata: &HashMap<String, Value<'_>>, key: &str) -> i64 {
+    metadata.get(key)
+        .and_then(|v| v.downcast_ref::<i64>().ok())
+        .copied()
+        .unwrap_or(0)
 }
 
 impl LinuxMediaProvider {
@@ -76,46 +106,33 @@ impl MediaProvider for LinuxMediaProvider {
             None => return NowPlayingInfo::default(),
         };
 
-        let proxy_path = "/org/mpris/MediaPlayer2";
-        let player_iface = "org.mpris.MediaPlayer2.Player";
-
-        let msg = match conn.call_method(
-            Some(player_name.as_str()), proxy_path,
-            Some(player_iface), "Metadata", &(),
-        ) {
-            Ok(m) => m,
+        let metadata_val = match get_property(conn, &player_name, "Metadata") {
+            Ok(Value::Variant(inner)) => *inner,
+            Ok(v) => v,
             Err(_) => return NowPlayingInfo::default(),
         };
 
-        let body = msg.body();
-        let metadata: HashMap<String, Value<'_>> = match body.deserialize() {
-            Ok(m) => m,
-            Err(_) => return NowPlayingInfo::default(),
+        let metadata: HashMap<String, Value<'_>> = match metadata_val {
+            Value::Dict(dict) => {
+                let mut map = HashMap::new();
+                for (k, v) in dict {
+                    if let Ok(key) = k.downcast_ref::<String>() {
+                        map.insert(key.clone(), v);
+                    }
+                }
+                map
+            }
+            _ => return NowPlayingInfo::default(),
         };
 
-        let title = metadata.get("xesam:title")
-            .and_then(|v| v.downcast_ref::<String>().ok())
-            .unwrap_or_default();
-
-        let artist = match metadata.get("xesam:artist") {
-            Some(v) => v.downcast_ref::<String>().ok().unwrap_or_default(),
-            None => String::new(),
-        };
-
-        let album = metadata.get("xesam:album")
-            .and_then(|v| v.downcast_ref::<String>().ok())
-            .unwrap_or_default();
-
-        let duration_us = metadata.get("mpris:length")
-            .and_then(|v| v.downcast_ref::<i64>().ok())
-            .unwrap_or(0);
-
-        let artwork_url = metadata.get("mpris:artUrl")
-            .and_then(|v| v.downcast_ref::<String>().ok())
-            .unwrap_or_default();
+        let title = get_metadata_string(&metadata, "xesam:title");
+        let artist = get_metadata_artist(&metadata);
+        let album = get_metadata_string(&metadata, "xesam:album");
+        let duration_us = get_metadata_i64(&metadata, "mpris:length");
+        let artwork_url = get_metadata_string(&metadata, "mpris:artUrl");
 
         let status = get_playback_status(conn, &player_name);
-        let position_us = get_position(conn, &player_name);
+        let position_us = get_position_us(conn, &player_name);
 
         let duration_secs = duration_us as f64 / 1_000_000.0;
         let position_secs = position_us as f64 / 1_000_000.0;
