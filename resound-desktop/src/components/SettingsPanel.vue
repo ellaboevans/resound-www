@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useSettings } from '../composables/useSettings'
+import { Settings } from "@lucide/vue";
 
 const settings = useSettings()
 const open = ref(false)
@@ -8,7 +9,7 @@ const open = ref(false)
 
 <template>
   <div class="settings-wrapper">
-    <button class="gear" @click="open = !open">⚙</button>
+    <button class="gear" @click="open = !open"><Settings :size="16" /></button>
     <Transition name="slide">
       <div class="panel" v-if="open">
         <label class="row">
@@ -33,7 +34,9 @@ const open = ref(false)
 
 <style scoped>
 .settings-wrapper {
-  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .gear {
@@ -43,6 +46,7 @@ const open = ref(false)
   font-size: 14px;
   cursor: pointer;
   padding: 4px 8px;
+  -webkit-app-region: no-drag;
 }
 
 .gear:hover {
@@ -50,9 +54,6 @@ const open = ref(false)
 }
 
 .panel {
-  position: absolute;
-  bottom: 100%;
-  right: 0;
   background: #111;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 10px;
@@ -60,8 +61,8 @@ const open = ref(false)
   display: flex;
   flex-direction: column;
   gap: 8px;
-  min-width: 180px;
-  margin-bottom: 4px;
+  width: 100%;
+  margin-top: 6px;
 }
 
 .row {

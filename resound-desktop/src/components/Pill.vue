@@ -73,11 +73,6 @@ function artworkUrl(): string {
   width: 100%;
 }
 
-.pill.hovering .pill-content {
-  justify-content: space-between;
-  gap: 0;
-}
-
 .artwork img {
   width: 22px;
   height: 22px;
