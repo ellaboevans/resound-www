@@ -1,4 +1,7 @@
 use serde::{Deserialize, Serialize};
+use std::sync::{Arc, Mutex, atomic::{AtomicBool, Ordering}};
+use std::thread;
+use std::time::Duration;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct NowPlayingInfo {
@@ -45,18 +48,40 @@ use linux::LinuxMediaProvider as PlatformMediaProvider;
 use macos::MacosMediaProvider as PlatformMediaProvider;
 
 pub struct MediaManager {
-    provider: PlatformMediaProvider,
+    provider: Arc<PlatformMediaProvider>,
+    cached_track: Arc<Mutex<NowPlayingInfo>>,
+    _running: Arc<AtomicBool>,
 }
 
 impl MediaManager {
     pub fn new() -> Self {
+        let provider = Arc::new(PlatformMediaProvider::new());
+        let cached_track = Arc::new(Mutex::new(NowPlayingInfo::default()));
+        let running = Arc::new(AtomicBool::new(true));
+
+        let bg_provider = provider.clone();
+        let bg_cache = cached_track.clone();
+        let bg_running = running.clone();
+
+        thread::spawn(move || {
+            while bg_running.load(Ordering::Relaxed) {
+                let info = bg_provider.current_track();
+                if let Ok(mut cache) = bg_cache.lock() {
+                    *cache = info;
+                }
+                thread::sleep(Duration::from_secs(1));
+            }
+        });
+
         Self {
-            provider: PlatformMediaProvider::new(),
+            provider,
+            cached_track,
+            _running: running,
         }
     }
 
     pub fn get_current_track(&self) -> NowPlayingInfo {
-        self.provider.current_track()
+        self.cached_track.lock().map(|c| c.clone()).unwrap_or_default()
     }
 
     pub fn play_pause(&self) {
