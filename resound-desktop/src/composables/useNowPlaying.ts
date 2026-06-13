@@ -75,7 +75,7 @@ function applyBackendData(data: NowPlayingInfo) {
     if (
       newTrack ||
       (data.is_playing && !smoothPlaying) ||
-      Math.abs(newPosSec - smoothPosSec) > 2.0
+      newPosSec - smoothPosSec > 2.0
     ) {
       anchorPosSec = newPosSec;
       anchorTime = performance.now();
@@ -98,12 +98,9 @@ function tick() {
 }
 
 function startStopRaf() {
-  if (smoothPlaying && !rafId) {
+  if (!rafId) {
     anchorTime = performance.now();
     rafId = requestAnimationFrame(tick);
-  } else if (!smoothPlaying && rafId) {
-    cancelAnimationFrame(rafId);
-    rafId = null;
   }
 }
 
