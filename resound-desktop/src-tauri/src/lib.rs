@@ -94,6 +94,20 @@ fn set_settings(settings: AppSettings, state: tauri::State<'_, Mutex<AppState>>)
     }
 }
 
+#[tauri::command]
+fn set_window_size(width: u32, height: u32, window: tauri::WebviewWindow) {
+    let _ = window.set_size(tauri::Size::Physical(
+        tauri::PhysicalSize::new(width, height),
+    ));
+    if let Some(monitor) = window.current_monitor().ok().flatten() {
+        let screen_w = monitor.size().width as f64;
+        let x = ((screen_w - width as f64) / 2.0) as i32;
+        let _ = window.set_position(tauri::Position::Physical(
+            tauri::PhysicalPosition::new(x, 24),
+        ));
+    }
+}
+
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
@@ -110,6 +124,7 @@ pub fn run() {
             set_volume,
             get_settings,
             set_settings,
+            set_window_size,
         ])
         .setup(|app| {
             let _ = tray::setup_tray(app.handle());

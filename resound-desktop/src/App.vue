@@ -1,11 +1,22 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
+import { invoke } from '@tauri-apps/api/core'
 import Pill from './components/Pill.vue'
 import ExpandedPanel from './components/ExpandedPanel.vue'
 import VolumeOverlay from './components/VolumeOverlay.vue'
 import SettingsPanel from './components/SettingsPanel.vue'
 
 const expanded = ref(false)
+const COLLAPSED_H = 48
+const EXPANDED_H = 280
+const W = 280
+
+async function resize(h: number) {
+  try { await invoke('set_window_size', { width: W, height: h }) }
+  catch {}
+}
+
+watch(expanded, (v) => resize(v ? EXPANDED_H : COLLAPSED_H), { immediate: false })
 </script>
 
 <template>
