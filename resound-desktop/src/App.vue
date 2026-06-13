@@ -40,12 +40,11 @@ watch(expanded, (v) => resize(v ? EXPANDED_H : COLLAPSED_H), { immediate: false 
         <div class="panel-wrap" v-if="expanded">
           <div class="divider"></div>
           <ExpandedPanel />
-          <div class="divider"></div>
-          <div class="panel-footer">
-            <SettingsPanel />
-          </div>
         </div>
       </Transition>
+    </div>
+    <div class="settings-pos">
+      <SettingsPanel />
     </div>
   </div>
 </template>
@@ -84,8 +83,11 @@ watch(expanded, (v) => resize(v ? EXPANDED_H : COLLAPSED_H), { immediate: false 
   margin: 0;
 }
 
-.panel-footer {
-  padding: 10px 16px;
+.settings-pos {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  z-index: 10;
 }
 
 .panel-enter-active,

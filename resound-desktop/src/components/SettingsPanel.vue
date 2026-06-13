@@ -34,9 +34,7 @@ const open = ref(false)
 
 <style scoped>
 .settings-wrapper {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  position: relative;
 }
 
 .gear {
@@ -47,6 +45,9 @@ const open = ref(false)
   cursor: pointer;
   padding: 4px 8px;
   -webkit-app-region: no-drag;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .gear:hover {
@@ -54,6 +55,9 @@ const open = ref(false)
 }
 
 .panel {
+  position: absolute;
+  bottom: 100%;
+  right: 0;
   background: #111;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 10px;
@@ -61,8 +65,8 @@ const open = ref(false)
   display: flex;
   flex-direction: column;
   gap: 8px;
-  width: 100%;
-  margin-top: 6px;
+  min-width: 180px;
+  margin-bottom: 6px;
 }
 
 .row {
