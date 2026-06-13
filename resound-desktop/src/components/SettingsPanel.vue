@@ -56,7 +56,7 @@ const open = ref(false)
 
 .panel {
   position: absolute;
-  bottom: 100%;
+  top: 100%;
   right: 0;
   background: #111;
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -66,7 +66,8 @@ const open = ref(false)
   flex-direction: column;
   gap: 8px;
   min-width: 180px;
-  margin-bottom: 6px;
+  margin-top: 4px;
+  z-index: 20;
 }
 
 .row {
