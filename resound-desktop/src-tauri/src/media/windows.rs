@@ -4,7 +4,6 @@ use windows::Media::Control::{
     GlobalSystemMediaTransportControlsSessionManager,
     GlobalSystemMediaTransportControlsSessionPlaybackStatus,
 };
-use windows::Foundation::TimeSpan;
 use std::sync::{Arc, Mutex};
 
 pub struct WindowsMediaProvider {
@@ -57,28 +56,30 @@ impl MediaProvider for WindowsMediaProvider {
             .map(|s| s == GlobalSystemMediaTransportControlsSessionPlaybackStatus::Playing)
             .unwrap_or(false);
 
-        let timeline_props = session.GetTimelineProperties().ok();
-        let (duration, position) = if let Some(tp) = timeline_props {
-            let dur = tp.Duration().unwrap_or_default();
-            let pos = tp.Position().unwrap_or_default();
-            (timespan_to_secs(dur), timespan_to_secs(pos))
-        } else {
-            (0.0, 0.0)
-        };
+        let artwork_base64 = (|| -> Option<String> {
+            use windows::Storage::Streams::DataReader;
 
-        let artwork_base64 = fetch_artwork_base64(&display_props);
+            let thumbnail = display_props.Thumbnail().ok().and_then(|t| t.ok())?;
+            let stream = thumbnail.OpenReadAsync().ok().and_then(|op| op.get().ok())?;
+
+            let reader = DataReader::CreateDataReader(&stream).ok()?;
+            let size = u32::try_from(stream.Size()).ok().filter(|&s| s > 0 && s <= 5_000_000)?;
+
+            if let Ok(op) = reader.LoadAsync(size) { let _ = op.get(); }
+            let mut buffer = vec![0u8; size as usize];
+            reader.ReadBytes(&mut buffer).ok()?;
+
+            use base64::Engine;
+            Some(base64::engine::general_purpose::STANDARD.encode(&buffer))
+        })().unwrap_or_default();
 
         NowPlayingInfo {
             track_title: title,
             artist_name: artist,
             album_title: album,
             is_playing,
-            progress: if duration > 0.0 {
-                position / duration
-            } else {
-                0.0
-            },
-            duration,
+            progress: 0.0,
+            duration: 0.0,
             volume: 50,
             artwork_base64,
             source: "Windows.Media.Control".into(),
@@ -122,43 +123,4 @@ impl MediaProvider for WindowsMediaProvider {
     }
 
     fn set_volume(&self, _level: f64) {}
-}
-
-fn timespan_to_secs(ts: TimeSpan) -> f64 {
-    ts.Duration as f64 / 10_000_000.0
-}
-
-fn fetch_artwork_base64(
-    props: &windows::Media::MediaProperties::MediaItemDisplayProperties,
-) -> String {
-    use windows::Storage::Streams::DataReader;
-
-    let thumbnail = match props.Thumbnail().ok().and_then(|t| t.ok()) {
-        Some(t) => t,
-        None => return String::new(),
-    };
-
-    let stream = match thumbnail.OpenReadAsync().ok().and_then(|op| op.get().ok()) {
-        Some(s) => s,
-        None => return String::new(),
-    };
-
-    let reader = match DataReader::CreateDataReader(&stream) {
-        Ok(r) => r,
-        _ => return String::new(),
-    };
-
-    let size = match u32::try_from(stream.Size()) {
-        Ok(s) if s > 0 && s <= 5_000_000 => s,
-        _ => return String::new(),
-    };
-
-    if let Ok(op) = reader.LoadAsync(size) { let _ = op.get(); }
-    let mut buffer = vec![0u8; size as usize];
-    if reader.ReadBytes(&mut buffer).is_err() {
-        return String::new();
-    }
-
-    use base64::Engine;
-    base64::engine::general_purpose::STANDARD.encode(&buffer)
 }

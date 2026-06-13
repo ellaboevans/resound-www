@@ -1,8 +1,7 @@
 use super::{MediaProvider, NowPlayingInfo, VolumeInfo};
 use zbus::blocking::Connection;
-use zbus::zvariant::Value;
+use zbus::zvariant::{Value, OwnedValue};
 use std::collections::HashMap;
-use std::time::Duration;
 
 pub struct LinuxMediaProvider {
     connection: Option<Connection>,
@@ -23,16 +22,16 @@ fn find_mpris_players(conn: &Connection) -> Vec<String> {
     names.into_iter().filter(|n| n.contains("org.mpris.MediaPlayer2")).collect()
 }
 
-fn get_metadata(conn: &Connection, name: &str) -> Option<HashMap<String, Value<'_>>> {
+fn get_metadata(conn: &Connection, name: &str) -> Option<HashMap<String, OwnedValue>> {
     let proxy_path = "/org/mpris/MediaPlayer2";
-    let meta: zbus::Result<HashMap<String, Value>> = conn.call_method(
+    let meta: zbus::Result<HashMap<String, Value<'_>>> = conn.call_method(
         Some(name),
         proxy_path,
         Some("org.mpris.MediaPlayer2.Player"),
         "Metadata",
         &(),
     ).and_then(|r| r.body().deserialize());
-    meta.ok()
+    meta.ok().map(|m| m.into_iter().map(|(k, v)| (k, v.to_owned())).collect())
 }
 
 fn get_playback_status(conn: &Connection, name: &str) -> Option<String> {
