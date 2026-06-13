@@ -1,18 +1,8 @@
 <script setup lang="ts">
-import { ref } from 'vue'
 import { useNowPlaying } from '../composables/useNowPlaying'
+import SettingsPanel from './SettingsPanel.vue'
 
 const { state } = useNowPlaying()
-const isHovering = ref(false)
-
-const emit = defineEmits<{
-  (e: 'expand', v: boolean): void
-}>()
-
-function onHover(v: boolean) {
-  isHovering.value = v
-  emit('expand', v)
-}
 
 function artworkUrl(): string {
   if (!state.current.artwork_base64) return ''
@@ -21,29 +11,18 @@ function artworkUrl(): string {
 </script>
 
 <template>
-  <div
-    class="pill"
-    @mouseenter="onHover(true)"
-    @mouseleave="onHover(false)"
-    :class="{ hovering: isHovering }"
-  >
+  <div class="pill">
     <div class="pill-content">
-      <template v-if="isHovering">
-        <span class="brand">Resound</span>
-      </template>
-      <template v-else>
-        <div class="artwork" v-if="state.current.track_title">
-          <img v-if="artworkUrl()" :src="artworkUrl()" alt="" />
-          <div v-else class="artwork-fallback">
-            <span>♪</span>
-          </div>
-        </div>
-        <div class="empty-icon" v-else>
-          <span>♪</span>
-        </div>
-      </template>
+      <div class="artwork" v-if="state.current.track_title">
+        <img v-if="artworkUrl()" :src="artworkUrl()" alt="" />
+        <div v-else class="artwork-fallback">♪</div>
+      </div>
+      <div class="empty-icon" v-else>♪</div>
       <div class="waveform" :class="{ playing: state.current.is_playing }">
         <span v-for="i in 4" :key="i" class="bar"></span>
+      </div>
+      <div class="gear-wrap">
+        <SettingsPanel />
       </div>
     </div>
   </div>
@@ -56,21 +35,23 @@ function artworkUrl(): string {
   justify-content: center;
   width: 100%;
   height: 100%;
-  transition: transform 0.15s ease;
   -webkit-app-region: drag;
-}
-
-.pill.hovering {
-  transform: scale(1.03);
 }
 
 .pill-content {
   display: flex;
   align-items: center;
-  justify-content: center;
   gap: 8px;
   padding: 0 10px;
   width: 100%;
+}
+
+.gear-wrap {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  position: relative;
+  z-index: 20;
 }
 
 .artwork img {
@@ -96,11 +77,6 @@ function artworkUrl(): string {
   background: linear-gradient(135deg, #e91e63, #f44336);
 }
 
-.empty-icon span {
-  color: #888;
-  font-size: 11px;
-}
-
 .waveform {
   display: flex;
   align-items: center;
@@ -113,14 +89,6 @@ function artworkUrl(): string {
   height: 100%;
   background: rgba(255, 255, 255, 0.4);
   border-radius: 2px;
-}
-
-.brand {
-  font-size: 11px;
-  font-weight: 600;
-  opacity: 0.25;
-  letter-spacing: 0.3px;
-  white-space: nowrap;
 }
 
 .playing .bar {

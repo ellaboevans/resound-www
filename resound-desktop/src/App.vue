@@ -3,7 +3,6 @@ import { ref, watch } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
 import Pill from './components/Pill.vue'
 import ExpandedPanel from './components/ExpandedPanel.vue'
-import SettingsPanel from './components/SettingsPanel.vue'
 
 const expanded = ref(false)
 const COLLAPSED_H = 48
@@ -35,9 +34,6 @@ watch(expanded, (v) => resize(v ? EXPANDED_H : COLLAPSED_H), { immediate: false 
 <template>
   <div class="window">
     <div class="container" :class="{ expanded }" @mouseenter="onEnter" @mouseleave="onLeave">
-      <div class="settings-header">
-        <SettingsPanel />
-      </div>
       <Pill />
       <Transition name="panel">
         <div class="panel-wrap" v-if="expanded">
@@ -82,12 +78,6 @@ watch(expanded, (v) => resize(v ? EXPANDED_H : COLLAPSED_H), { immediate: false 
   margin: 0;
 }
 
-.settings-header {
-  position: absolute;
-  top: 4px;
-  right: 4px;
-  z-index: 10;
-}
 
 .panel-enter-active,
 .panel-leave-active {
