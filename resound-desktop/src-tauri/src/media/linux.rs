@@ -80,7 +80,7 @@ impl MediaProvider for LinuxMediaProvider {
         let player_iface = "org.mpris.MediaPlayer2.Player";
 
         let msg = match conn.call_method(
-            Some(&player_name), proxy_path,
+            Some(player_name.as_str()), proxy_path,
             Some(player_iface), "Metadata", &(),
         ) {
             Ok(m) => m,
