@@ -91,6 +91,7 @@ const platforms = [
   {
     id: "windows",
     name: "Windows",
+    detail: "Windows 10 & 11",
     icon: WindowsPlatformIcon,
     options: [
       {
@@ -105,6 +106,7 @@ const platforms = [
         href: "/resound/resound-windows.exe",
       },
     ],
+    note: "Beta build, not yet code-signed. Windows SmartScreen may show a blue dialog — click More info, then Run anyway.",
     terminal: null,
   },
 ];
