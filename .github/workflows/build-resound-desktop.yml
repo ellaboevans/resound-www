@@ -57,13 +57,13 @@ jobs:
       - name: Install frontend deps
         run: npm install
 
-      - name: Build
-        run: |
-          if [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
-            npx tauri build --bundles deb,rpm
-          else
-            npx tauri build
-          fi
+      - name: Build (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: npx tauri build --bundles deb,rpm
+
+      - name: Build (Windows)
+        if: matrix.os == 'windows-latest'
+        run: npx tauri build
 
       - name: Upload Windows artifacts
         if: matrix.os == 'windows-latest'
