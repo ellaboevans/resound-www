@@ -71,9 +71,9 @@ watch(expanded, (v) => resize(v ? EXPANDED_H : COLLAPSED_H), { immediate: false 
   border-radius: 16px;
   overflow: hidden;
   position: absolute;
-  top: 50%;
+  top: 0;
   left: 50%;
-  transform: translate(-50%, -50%);
+  transform: translate(-50%, 0);
   min-width: 200px;
   max-width: 320px;
   transition: all 0.2s ease;
