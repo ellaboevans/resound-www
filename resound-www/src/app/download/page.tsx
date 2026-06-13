@@ -25,9 +25,6 @@ import { cn } from "@/lib/utils";
 const macGatekeeperCommand =
   "sudo xattr -r -d com.apple.quarantine /Applications/Resound.app";
 
-const linuxInstallCommand = `chmod +x ./Resound*.AppImage
-./Resound*.AppImage`;
-
 const platforms = [
   {
     id: "macos",
@@ -50,7 +47,7 @@ const platforms = [
     note: "Beta build, not yet notarised by Apple. If macOS says the app is damaged, move it to Applications and clear quarantine.",
     terminal: {
       trigger: "Fix the beta warning from Terminal",
-      command: macGatekeeperCommand,
+      commands: [macGatekeeperCommand],
     },
   },
   {
@@ -85,7 +82,10 @@ const platforms = [
     note: "Requires a D-Bus session and libwebkit2gtk-4.1.",
     terminal: {
       trigger: "Install from Terminal",
-      command: linuxInstallCommand,
+      commands: [
+        "sudo apt install ~/Downloads/resound-linux.deb",
+        "sudo dnf install ~/Downloads/resound-linux.rpm",
+      ],
     },
   },
   {
@@ -660,14 +660,16 @@ function PlatformColumn({
         </p>
       )}
 
-      {!platform.comingSoon && platform.terminal && (
+      {platform.terminal && (
         <Accordion className="mt-3">
           <AccordionItem value={`${platform.id}-terminal`}>
             <AccordionTrigger className="justify-start gap-2 text-sm text-muted-foreground hover:text-foreground">
               {platform.terminal.trigger}
             </AccordionTrigger>
-            <AccordionContent>
-              <CommandBlock command={platform.terminal.command} />
+            <AccordionContent className="space-y-2">
+              {platform.terminal.commands.map((cmd, i) => (
+                <CommandBlock key={i} command={cmd} />
+              ))}
             </AccordionContent>
           </AccordionItem>
         </Accordion>

@@ -132,6 +132,13 @@ jobs:
             echo "Copied Linux deb: $deb_file"
           fi
 
+          # Linux rpm
+          rpm_file=$(find artifacts/linux/rpm -name "*.rpm" 2>/dev/null | head -1)
+          if [ -n "$rpm_file" ]; then
+            cp "$rpm_file" resound-www/public/resound/resound-linux.rpm
+            echo "Copied Linux rpm: $rpm_file"
+          fi
+
           ls -la resound-www/public/resound/
 
       - name: Commit and push
