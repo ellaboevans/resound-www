@@ -9,16 +9,16 @@ const { state } = useNowPlaying()
 const volume = useVolume()
 
 const elapsedText = computed(() => {
-  const t = state.current.progress * state.current.duration
-  const m = Math.floor(t / 60)
-  const s = Math.floor(t % 60)
+  const secs = Math.round(state.current.progress * state.current.duration)
+  const m = Math.floor(secs / 60)
+  const s = secs % 60
   return `${m}:${s.toString().padStart(2, '0')}`
 })
 
 const remainingText = computed(() => {
-  const t = (1 - state.current.progress) * state.current.duration
-  const m = Math.floor(t / 60)
-  const s = Math.floor(t % 60)
+  const secs = Math.round((1 - state.current.progress) * state.current.duration)
+  const m = Math.floor(secs / 60)
+  const s = secs % 60
   return `${m}:${s.toString().padStart(2, '0')}`
 })
 

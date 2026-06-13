@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useNowPlaying } from '../composables/useNowPlaying'
+import { SkipBack, Play, Pause, SkipForward } from '@lucide/vue'
 
 const { state, playPause, nextTrack, prevTrack } = useNowPlaying()
 </script>
@@ -7,25 +8,14 @@ const { state, playPause, nextTrack, prevTrack } = useNowPlaying()
 <template>
   <div class="transport">
     <button class="ctrl-btn" @click="prevTrack">
-      <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-        <polygon points="10,2 10,14 3,8" />
-        <polygon points="14,2 14,14 7,8" />
-      </svg>
+      <SkipBack :size="16" />
     </button>
     <button class="play-btn" @click="playPause">
-      <svg v-if="state.current.is_playing" width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
-        <rect x="1" y="0" width="4" height="14" rx="1" />
-        <rect x="9" y="0" width="4" height="14" rx="1" />
-      </svg>
-      <svg v-else width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
-        <polygon points="0,0 14,7 0,14" />
-      </svg>
+      <Pause v-if="state.current.is_playing" :size="14" />
+      <Play v-else :size="14" :fill="'black'" />
     </button>
     <button class="ctrl-btn" @click="nextTrack">
-      <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-        <polygon points="6,2 6,14 13,8" />
-        <polygon points="2,2 2,14 9,8" />
-      </svg>
+      <SkipForward :size="16" />
     </button>
   </div>
 </template>

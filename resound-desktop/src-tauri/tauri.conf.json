@@ -20,6 +20,7 @@
         "skipTaskbar": true,
         "focusable": false,
         "resizable": true,
+        "shadow": false,
         "visible": true
       }
     ],
