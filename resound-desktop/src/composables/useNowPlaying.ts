@@ -49,6 +49,11 @@ let prevDuration = 0;
 
 function diffUpdate(data: NowPlayingInfo) {
   const c = state.current;
+  // Don't clear track info with empty data from a transient state
+  // (e.g. screen lock, sleep). Keep showing the last valid track.
+  if (data.track_title === "" && c.track_title !== "") {
+    return;
+  }
   if (c.track_title !== data.track_title) c.track_title = data.track_title;
   if (c.artist_name !== data.artist_name) c.artist_name = data.artist_name;
   if (c.album_title !== data.album_title) c.album_title = data.album_title;

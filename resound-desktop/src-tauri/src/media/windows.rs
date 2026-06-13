@@ -19,7 +19,17 @@ impl WindowsMediaProvider {
 
     fn get_current_session(&self) -> Option<GlobalSystemMediaTransportControlsSession> {
         let manager = self.ensure_manager()?;
-        manager.GetCurrentSession().ok()
+        let session = manager.GetCurrentSession().ok()?;
+        // Verify the session is alive by checking its playback info
+        if session.GetPlaybackInfo().is_err() {
+            // Session went stale (screen lock / sleep). Clear cached manager
+            // so the next poll re-acquires a fresh one.
+            if let Ok(mut guard) = self.manager.lock() {
+                *guard = None;
+            }
+            return None;
+        }
+        Some(session)
     }
 
     fn ensure_manager(&self) -> Option<GlobalSystemMediaTransportControlsSessionManager> {
