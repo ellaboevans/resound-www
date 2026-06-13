@@ -3,7 +3,6 @@ import { ref, watch } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
 import Pill from './components/Pill.vue'
 import ExpandedPanel from './components/ExpandedPanel.vue'
-import VolumeOverlay from './components/VolumeOverlay.vue'
 import SettingsPanel from './components/SettingsPanel.vue'
 
 const expanded = ref(false)
@@ -34,7 +33,6 @@ watch(expanded, (v) => resize(v ? EXPANDED_H : COLLAPSED_H), { immediate: false 
       <SettingsPanel />
     </div>
   </div>
-  <VolumeOverlay />
 </template>
 
 <style scoped>

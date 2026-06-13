@@ -1,42 +1,36 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { useNowPlaying } from '../composables/useNowPlaying'
-import { useVolume } from '../composables/useVolume'
-import TransportControls from './TransportControls.vue'
-import VolumeSlider from './VolumeSlider.vue'
+import { computed } from "vue";
+import { useNowPlaying } from "../composables/useNowPlaying";
+import TransportControls from "./TransportControls.vue";
 
-const { state } = useNowPlaying()
-const volume = useVolume()
+const { state } = useNowPlaying();
 
 const elapsedText = computed(() => {
-  const secs = Math.round(state.current.progress * state.current.duration)
-  const m = Math.floor(secs / 60)
-  const s = secs % 60
-  return `${m}:${s.toString().padStart(2, '0')}`
-})
+  const secs = Math.round(state.current.progress * state.current.duration);
+  const m = Math.floor(secs / 60);
+  const s = secs % 60;
+  return `${m}:${s.toString().padStart(2, "0")}`;
+});
 
 const remainingText = computed(() => {
-  const secs = Math.round((1 - state.current.progress) * state.current.duration)
-  const m = Math.floor(secs / 60)
-  const s = secs % 60
-  return `${m}:${s.toString().padStart(2, '0')}`
-})
+  const secs = Math.round(
+    (1 - state.current.progress) * state.current.duration,
+  );
+  const m = Math.floor(secs / 60);
+  const s = secs % 60;
+  return `${m}:${s.toString().padStart(2, "0")}`;
+});
 
 const progressStyle = computed(() => ({
-  width: `${state.current.progress * 100}%`
-}))
-
-function artworkUrl(): string {
-  if (!state.current.artwork_base64) return ''
-  return `data:image/jpeg;base64,${state.current.artwork_base64}`
-}
+  width: `${state.current.progress * 100}%`,
+}));
 </script>
 
 <template>
-  <div class="expanded" v-if="state.current.track_title">
+  <div class="expanded">
     <div class="top-row">
       <div class="artwork-lg">
-        <img v-if="artworkUrl()" :src="artworkUrl()" alt="" />
+        <img v-if="state.current.artwork_base64" :src="'data:image/jpeg;base64,' + state.current.artwork_base64" alt="" />
         <div v-else class="artwork-fallback">♪</div>
       </div>
       <div class="track-info">
@@ -57,14 +51,6 @@ function artworkUrl(): string {
     </div>
 
     <TransportControls />
-    <VolumeSlider :volume="volume.state.level" @set-volume="volume.setVolume" />
-  </div>
-
-  <div class="expanded empty" v-else>
-    <div class="empty-state">
-      <span class="empty-icon">♪</span>
-      <span class="empty-text">Nothing is playing</span>
-    </div>
   </div>
 </template>
 
@@ -155,28 +141,5 @@ function artworkUrl(): string {
   font-weight: 500;
   opacity: 0.4;
   font-variant-numeric: tabular-nums;
-}
-
-.empty {
-  height: 100px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  opacity: 0.3;
-}
-
-.empty-icon {
-  font-size: 20px;
-}
-
-.empty-text {
-  font-size: 12px;
 }
 </style>

@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { useNowPlaying } from '../composables/useNowPlaying'
-import { SkipBack, Play, Pause, SkipForward } from '@lucide/vue'
+import { useNowPlaying } from "../composables/useNowPlaying";
+import { SkipBack, Play, Pause, SkipForward } from "@lucide/vue";
 
-const { state, playPause, nextTrack, prevTrack } = useNowPlaying()
+const { state, playPause, nextTrack, prevTrack } = useNowPlaying();
 </script>
 
 <template>
@@ -11,7 +11,7 @@ const { state, playPause, nextTrack, prevTrack } = useNowPlaying()
       <SkipBack :size="16" />
     </button>
     <button class="play-btn" @click="playPause">
-      <Pause v-if="state.current.is_playing" :size="14" />
+      <Pause v-if="state.current.is_playing" :size="14" fill="black" />
       <Play v-else :size="14" :fill="'black'" />
     </button>
     <button class="ctrl-btn" @click="nextTrack">
@@ -25,7 +25,7 @@ const { state, playPause, nextTrack, prevTrack } = useNowPlaying()
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 28px;
+  gap: 24px;
   padding: 8px 16px;
 }
 
@@ -40,7 +40,9 @@ const { state, playPause, nextTrack, prevTrack } = useNowPlaying()
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: transform 0.12s ease, opacity 0.12s ease;
+  transition:
+    transform 0.12s ease,
+    opacity 0.12s ease;
 }
 
 .ctrl-btn:active {
