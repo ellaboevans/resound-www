@@ -86,9 +86,15 @@ function artworkUrl(): string {
 
 .bar {
   width: 3px;
+  height: 30%;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 2px;
+  transition: height 0.3s, background 0.3s;
+}
+
+.playing .bar {
   height: 100%;
   background: rgba(255, 255, 255, 0.4);
-  border-radius: 2px;
 }
 
 .playing .bar {

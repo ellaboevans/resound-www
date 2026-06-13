@@ -47,13 +47,8 @@ let smoothPlaying = false;
 let prevTrackTitle = "";
 let prevDuration = 0;
 
-function diffUpdate(data: NowPlayingInfo): boolean {
+function diffUpdate(data: NowPlayingInfo) {
   const c = state.current;
-  // Don't clear track info with empty data from a transient state
-  // (e.g. screen lock, sleep). Keep showing the last valid track.
-  if (data.track_title === "" && c.track_title !== "") {
-    return false;
-  }
   if (c.track_title !== data.track_title) c.track_title = data.track_title;
   if (c.artist_name !== data.artist_name) c.artist_name = data.artist_name;
   if (c.album_title !== data.album_title) c.album_title = data.album_title;
@@ -63,7 +58,6 @@ function diffUpdate(data: NowPlayingInfo): boolean {
   if (c.source !== data.source) c.source = data.source;
   if (c.artwork_base64 !== data.artwork_base64)
     c.artwork_base64 = data.artwork_base64;
-  return true;
 }
 
 function updateProgress() {
@@ -75,9 +69,30 @@ function updateProgress() {
   }
 }
 
+let emptyTimeout: ReturnType<typeof setTimeout> | null = null;
+
 function applyBackendData(data: NowPlayingInfo) {
-  // If data was empty/stale don't touch smoothPlaying or anchor state.
-  if (!diffUpdate(data)) return;
+  // When data goes empty while we have a valid track, debounce 3s before
+  // clearing. This distinguishes screen lock (transient — music still plays)
+  // from app closed (permanent — show empty state).
+  if (data.track_title === "" && state.current.track_title !== "") {
+    if (!emptyTimeout) {
+      emptyTimeout = setTimeout(() => {
+        diffUpdate(emptyTrack);
+        smoothPlaying = false;
+        emptyTimeout = null;
+      }, 3000);
+    }
+    return; // keep current UI until timeout fires or real data returns
+  }
+
+  // Valid data — cancel any pending clear
+  if (emptyTimeout) {
+    clearTimeout(emptyTimeout);
+    emptyTimeout = null;
+  }
+
+  diffUpdate(data);
 
   if (data.duration > 0) {
     const newPosSec = data.progress * data.duration;
@@ -100,9 +115,6 @@ function applyBackendData(data: NowPlayingInfo) {
   }
 
   smoothPlaying = data.is_playing;
-  // Compute progress from smooth state so the 1s poll interval keeps the
-  // timer alive even when requestAnimationFrame is suspended (Windows
-  // screen lock suspends the WebView render loop).
   updateProgress();
   startStopRaf();
 }

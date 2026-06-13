@@ -28,35 +28,47 @@ const progressStyle = computed(() => ({
 
 <template>
   <div class="expanded">
-    <div class="top-row">
-      <div class="artwork-lg">
-        <img v-if="state.current.artwork_base64" :src="'data:image/jpeg;base64,' + state.current.artwork_base64" alt="" />
-        <div v-else class="artwork-fallback">♪</div>
+    <div class="track-content" v-if="state.current.track_title">
+      <div class="top-row">
+        <div class="artwork-lg">
+          <img
+            v-if="state.current.artwork_base64"
+            :src="'data:image/jpeg;base64,' + state.current.artwork_base64"
+            alt="" />
+          <div v-else class="artwork-fallback">♪</div>
+        </div>
+        <div class="track-info">
+          <div class="title">{{ state.current.track_title }}</div>
+          <div class="artist">{{ state.current.artist_name }}</div>
+        </div>
       </div>
-      <div class="track-info">
-        <div class="title">{{ state.current.track_title }}</div>
-        <div class="artist">{{ state.current.artist_name }}</div>
+
+      <div class="progress-row">
+        <div class="progress-track">
+          <div class="progress-fill" :style="progressStyle"></div>
+        </div>
       </div>
+
+      <div class="time-row">
+        <span class="time">{{ elapsedText }}</span>
+        <span class="time">-{{ remainingText }}</span>
+      </div>
+
+      <TransportControls />
     </div>
 
-    <div class="progress-row">
-      <div class="progress-track">
-        <div class="progress-fill" :style="progressStyle"></div>
-      </div>
+    <div class="empty-state" v-else>
+      <div class="empty-icon">♪</div>
+      <div class="empty-text">Nothing is playing</div>
     </div>
-
-    <div class="time-row">
-      <span class="time">{{ elapsedText }}</span>
-      <span class="time">-{{ remainingText }}</span>
-    </div>
-
-    <TransportControls />
   </div>
 </template>
 
 <style scoped>
 .expanded {
   width: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 .top-row {
@@ -141,5 +153,26 @@ const progressStyle = computed(() => ({
   font-weight: 500;
   opacity: 0.4;
   font-variant-numeric: tabular-nums;
+}
+
+.empty-state {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding-bottom: 16px;
+}
+
+.empty-icon {
+  font-size: 28px;
+  opacity: 0.2;
+}
+
+.empty-text {
+  font-size: 13px;
+  font-weight: 500;
+  opacity: 0.25;
 }
 </style>

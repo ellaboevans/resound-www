@@ -17,6 +17,15 @@ impl WindowsMediaProvider {
         }
     }
 
+    /// True when Windows reports any active media session (an app is registered
+    /// with GSMTC). False when every media app is closed — caller should show
+    /// the empty/stopped state rather than preserving a stale cached track.
+    pub fn has_active_session(&self) -> bool {
+        self.ensure_manager()
+            .and_then(|m| m.GetCurrentSession().ok())
+            .is_some()
+    }
+
     fn get_current_session(&self) -> Option<GlobalSystemMediaTransportControlsSession> {
         let manager = self.ensure_manager()?;
         let session = manager.GetCurrentSession().ok()?;
@@ -115,6 +124,12 @@ impl MediaProvider for WindowsMediaProvider {
             artwork_base64,
             source: "Windows.Media.Control".into(),
         }
+    }
+
+    fn has_media_session(&self) -> bool {
+        self.ensure_manager()
+            .and_then(|m| m.GetCurrentSession().ok())
+            .is_some()
     }
 
     fn play_pause(&self) {
