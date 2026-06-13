@@ -31,8 +31,6 @@ pub trait MediaProvider: Send + Sync {
     fn set_volume(&self, level: f64);
 }
 
-pub mod artwork_cache;
-
 #[cfg(target_os = "windows")]
 mod windows;
 #[cfg(target_os = "linux")]
@@ -63,9 +61,19 @@ impl MediaManager {
         let bg_cache = cached_track.clone();
         let bg_running = running.clone();
 
+        let mut prev_key = (String::new(), String::new());
+        let mut cached_artwork = String::new();
+
         thread::spawn(move || {
             while bg_running.load(Ordering::Relaxed) {
-                let info = bg_provider.current_track();
+                let mut info = bg_provider.current_track();
+                let key = (info.track_title.clone(), info.artist_name.clone());
+                if key == prev_key && !cached_artwork.is_empty() {
+                    info.artwork_base64 = cached_artwork.clone();
+                } else {
+                    prev_key = key;
+                    cached_artwork = info.artwork_base64.clone();
+                }
                 if let Ok(mut cache) = bg_cache.lock() {
                     *cache = info;
                 }
