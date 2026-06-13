@@ -57,7 +57,8 @@ const open = ref(false)
 .panel {
   position: absolute;
   bottom: 100%;
-  right: 0;
+  left: 50%;
+  transform: translateX(-50%);
   background: #111;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 10px;
