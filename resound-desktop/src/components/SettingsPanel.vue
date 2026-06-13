@@ -1,10 +1,15 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, inject, watch, type Ref } from 'vue'
 import { useSettings } from '../composables/useSettings'
 import { Settings } from "@lucide/vue";
 
 const settings = useSettings()
 const open = ref(false)
+
+const expanded = inject<Ref<boolean>>('expanded')
+if (expanded) {
+  watch(expanded, (v) => { if (!v) open.value = false })
+}
 </script>
 
 <template>

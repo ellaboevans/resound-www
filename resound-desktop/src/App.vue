@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, provide } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
 import Pill from './components/Pill.vue'
 import ExpandedPanel from './components/ExpandedPanel.vue'
 
+
 const expanded = ref(false)
+provide('expanded', expanded)
 const COLLAPSED_H = 48
 const EXPANDED_H = 280
 const W = 280
