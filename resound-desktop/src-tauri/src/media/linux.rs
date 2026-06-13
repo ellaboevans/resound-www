@@ -1,6 +1,6 @@
 use super::{MediaProvider, NowPlayingInfo, VolumeInfo};
 use zbus::blocking::Connection;
-use zbus::zvariant::{Value, OwnedValue};
+use zbus::zvariant::Value;
 use std::collections::HashMap;
 
 pub struct LinuxMediaProvider {
@@ -22,40 +22,26 @@ fn find_mpris_players(conn: &Connection) -> Vec<String> {
     names.into_iter().filter(|n| n.contains("org.mpris.MediaPlayer2")).collect()
 }
 
-fn get_metadata(conn: &Connection, name: &str) -> Option<HashMap<String, OwnedValue>> {
+fn get_playback_status(conn: &Connection, name: &str) -> String {
     let proxy_path = "/org/mpris/MediaPlayer2";
-    let meta: zbus::Result<HashMap<String, Value<'_>>> = conn.call_method(
-        Some(name),
-        proxy_path,
-        Some("org.mpris.MediaPlayer2.Player"),
-        "Metadata",
-        &(),
-    ).and_then(|r| r.body().deserialize());
-    meta.ok().map(|m| m.into_iter().map(|(k, v)| (k, v.to_owned())).collect())
-}
-
-fn get_playback_status(conn: &Connection, name: &str) -> Option<String> {
-    let proxy_path = "/org/mpris/MediaPlayer2";
-    let status: zbus::Result<String> = conn.call_method(
+    conn.call_method(
         Some(name),
         proxy_path,
         Some("org.mpris.MediaPlayer2.Player"),
         "PlaybackStatus",
         &(),
-    ).and_then(|r| r.body().deserialize());
-    status.ok()
+    ).and_then(|r| r.body().deserialize()).unwrap_or_default()
 }
 
 fn get_position(conn: &Connection, name: &str) -> i64 {
     let proxy_path = "/org/mpris/MediaPlayer2";
-    let pos: zbus::Result<i64> = conn.call_method(
+    conn.call_method(
         Some(name),
         proxy_path,
         Some("org.mpris.MediaPlayer2.Player"),
         "Position",
         &(),
-    ).and_then(|r| r.body().deserialize());
-    pos.unwrap_or(0)
+    ).and_then(|r| r.body().deserialize()).unwrap_or(0)
 }
 
 fn call_player_method(conn: &Connection, name: &str, method: &str) {
@@ -90,34 +76,49 @@ impl MediaProvider for LinuxMediaProvider {
             None => return NowPlayingInfo::default(),
         };
 
-        let metadata = get_metadata(conn, &player_name).unwrap_or_default();
-        let status = get_playback_status(conn, &player_name).unwrap_or_default();
-        let position_us = get_position(conn, &player_name);
+        let proxy_path = "/org/mpris/MediaPlayer2";
+        let player_iface = "org.mpris.MediaPlayer2.Player";
+
+        let msg = match conn.call_method(
+            Some(&player_name), proxy_path,
+            Some(player_iface), "Metadata", &(),
+        ) {
+            Ok(m) => m,
+            Err(_) => return NowPlayingInfo::default(),
+        };
+
+        let body = msg.body();
+        let metadata: HashMap<String, Value<'_>> = match body.deserialize() {
+            Ok(m) => m,
+            Err(_) => return NowPlayingInfo::default(),
+        };
 
         let title = metadata.get("xesam:title")
-            .and_then(|v| v.downcast_ref::<String>())
-            .cloned()
+            .and_then(|v| v.downcast_ref::<String>().ok())
             .unwrap_or_default();
-        let artist = metadata.get("xesam:artist")
-            .and_then(|v| v.downcast_ref::<Vec<String>>())
-            .and_then(|a| a.first().cloned())
-            .unwrap_or_default();
+
+        let artist = match metadata.get("xesam:artist") {
+            Some(v) => v.downcast_ref::<String>().ok().unwrap_or_default(),
+            None => String::new(),
+        };
+
         let album = metadata.get("xesam:album")
-            .and_then(|v| v.downcast_ref::<String>())
-            .cloned()
+            .and_then(|v| v.downcast_ref::<String>().ok())
             .unwrap_or_default();
+
         let duration_us = metadata.get("mpris:length")
-            .and_then(|v| v.downcast_ref::<i64>())
-            .copied()
+            .and_then(|v| v.downcast_ref::<i64>().ok())
             .unwrap_or(0);
+
+        let artwork_url = metadata.get("mpris:artUrl")
+            .and_then(|v| v.downcast_ref::<String>().ok())
+            .unwrap_or_default();
+
+        let status = get_playback_status(conn, &player_name);
+        let position_us = get_position(conn, &player_name);
 
         let duration_secs = duration_us as f64 / 1_000_000.0;
         let position_secs = position_us as f64 / 1_000_000.0;
-
-        let artwork_url = metadata.get("mpris:artUrl")
-            .and_then(|v| v.downcast_ref::<String>())
-            .cloned()
-            .unwrap_or_default();
 
         let artwork_b64 = fetch_artwork_base64(&artwork_url);
 
