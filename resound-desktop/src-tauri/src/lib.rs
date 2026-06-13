@@ -96,8 +96,8 @@ fn set_settings(settings: AppSettings, state: tauri::State<'_, Mutex<AppState>>)
 
 #[tauri::command]
 fn set_window_size(width: u32, height: u32, window: tauri::WebviewWindow) {
-    let _ = window.set_size(tauri::Size::Physical(
-        tauri::PhysicalSize::new(width, height),
+    let _ = window.set_size(tauri::Size::Logical(
+        tauri::LogicalSize::new(width as f64, height as f64),
     ));
 }
 
