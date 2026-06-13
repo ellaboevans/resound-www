@@ -67,15 +67,20 @@ impl MediaManager {
         thread::spawn(move || {
             while bg_running.load(Ordering::Relaxed) {
                 let mut info = bg_provider.current_track();
-                let key = (info.track_title.clone(), info.artist_name.clone());
-                if key == prev_key && !cached_artwork.is_empty() {
-                    info.artwork_base64 = cached_artwork.clone();
-                } else {
-                    prev_key = key;
-                    cached_artwork = info.artwork_base64.clone();
-                }
-                if let Ok(mut cache) = bg_cache.lock() {
-                    *cache = info;
+                // Only cache when we got valid data — screen lock/sleep can
+                // return default/empty info that shouldn't erase the last
+                // known-good state visible in the UI.
+                if !info.track_title.is_empty() {
+                    let key = (info.track_title.clone(), info.artist_name.clone());
+                    if key == prev_key && !cached_artwork.is_empty() {
+                        info.artwork_base64 = cached_artwork.clone();
+                    } else {
+                        prev_key = key;
+                        cached_artwork = info.artwork_base64.clone();
+                    }
+                    if let Ok(mut cache) = bg_cache.lock() {
+                        *cache = info;
+                    }
                 }
                 thread::sleep(Duration::from_secs(1));
             }

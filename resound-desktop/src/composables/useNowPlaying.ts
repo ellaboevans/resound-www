@@ -47,12 +47,12 @@ let smoothPlaying = false;
 let prevTrackTitle = "";
 let prevDuration = 0;
 
-function diffUpdate(data: NowPlayingInfo) {
+function diffUpdate(data: NowPlayingInfo): boolean {
   const c = state.current;
   // Don't clear track info with empty data from a transient state
   // (e.g. screen lock, sleep). Keep showing the last valid track.
   if (data.track_title === "" && c.track_title !== "") {
-    return;
+    return false;
   }
   if (c.track_title !== data.track_title) c.track_title = data.track_title;
   if (c.artist_name !== data.artist_name) c.artist_name = data.artist_name;
@@ -63,10 +63,13 @@ function diffUpdate(data: NowPlayingInfo) {
   if (c.source !== data.source) c.source = data.source;
   if (c.artwork_base64 !== data.artwork_base64)
     c.artwork_base64 = data.artwork_base64;
+  return true;
 }
 
 function applyBackendData(data: NowPlayingInfo) {
-  diffUpdate(data);
+  // If data was empty/stale don't touch smoothPlaying or anchor state.
+  // The rAF timer keeps advancing from its last known-good anchor.
+  if (!diffUpdate(data)) return;
 
   if (data.duration > 0) {
     const newPosSec = data.progress * data.duration;
