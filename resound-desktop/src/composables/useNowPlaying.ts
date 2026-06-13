@@ -40,6 +40,7 @@ let rafId: number | null = null;
 
 let anchorPosSec = 0;
 let anchorTime = 0;
+let smoothPosSec = 0;
 let smoothDurationSec = 0;
 let smoothPlaying = false;
 
@@ -69,16 +70,14 @@ function applyBackendData(data: NowPlayingInfo) {
   diffUpdate(data);
   smoothDurationSec = data.duration;
 
-  const currentPosSec =
-    smoothDurationSec > 0 ? state.current.progress * smoothDurationSec : 0;
-
   if (
     newTrack ||
     (data.is_playing && !smoothPlaying) ||
-    Math.abs(newPosSec - currentPosSec) > 2.0
+    Math.abs(newPosSec - smoothPosSec) > 2.0
   ) {
     anchorPosSec = newPosSec;
     anchorTime = performance.now();
+    smoothPosSec = newPosSec;
   }
 
   smoothPlaying = data.is_playing;
@@ -89,10 +88,8 @@ function tick() {
   if (smoothPlaying && smoothDurationSec > 0) {
     const elapsed = (performance.now() - anchorTime) / 1000;
     const pos = Math.min(anchorPosSec + elapsed, smoothDurationSec);
-    const pct = pos / smoothDurationSec;
-    if (Math.abs(state.current.progress - pct) > 0.001) {
-      state.current.progress = pct;
-    }
+    smoothPosSec = pos;
+    state.current.progress = pos / smoothDurationSec;
   }
   rafId = requestAnimationFrame(tick);
 }
