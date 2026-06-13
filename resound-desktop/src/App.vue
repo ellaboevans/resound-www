@@ -22,7 +22,7 @@ watch(expanded, (v) => resize(v ? EXPANDED_H : COLLAPSED_H), { immediate: false 
 <template>
   <div class="window" @mouseenter="expanded = true" @mouseleave="expanded = false">
     <div class="container" :class="{ expanded }">
-      <Pill @expand="expanded = $event" />
+      <Pill />
       <Transition name="panel">
         <div class="panel-wrap" v-if="expanded">
           <div class="divider"></div>
