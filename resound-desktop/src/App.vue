@@ -85,8 +85,8 @@ watch(expanded, (v) => resize(v ? EXPANDED_H : COLLAPSED_H), { immediate: false 
 
 .settings-footer {
   display: flex;
-  justify-content: center;
-  padding: 8px 0;
+  justify-content: flex-end;
+  padding: 8px 16px;
 }
 
 .panel-enter-active,
