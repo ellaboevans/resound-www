@@ -44,11 +44,23 @@ let smoothDurationSec = 0
 let smoothPlaying = false
 let smoothAnchor = 0
 
+let prevTrackTitle = ''
+let prevDuration = 0
+
 function applyBackendData(data: NowPlayingInfo) {
-  smoothPosSec = data.progress * data.duration
+  const newPosSec = data.progress * data.duration
+  const newTrack = data.track_title !== prevTrackTitle || data.duration !== prevDuration
+  prevTrackTitle = data.track_title
+  prevDuration = data.duration
+
   smoothDurationSec = data.duration
+
+  if (newTrack || (!smoothPlaying && data.is_playing) || Math.abs(newPosSec - smoothPosSec) > 2.0) {
+    smoothPosSec = newPosSec
+    smoothAnchor = performance.now()
+  }
+
   smoothPlaying = data.is_playing
-  smoothAnchor = performance.now()
   state.current = { ...data, progress: smoothDurationSec > 0 ? smoothPosSec / smoothDurationSec : 0 }
 }
 
