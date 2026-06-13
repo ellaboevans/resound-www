@@ -11,7 +11,6 @@ const EXPANDED_H = 280
 const W = 280
 
 let collapseTimer: ReturnType<typeof setTimeout> | null = null
-let expandTimer: ReturnType<typeof setTimeout> | null = null
 
 async function resize(h: number) {
   try { await invoke('set_window_size', { width: W, height: h }) }
@@ -20,16 +19,10 @@ async function resize(h: number) {
 
 function onEnter() {
   if (collapseTimer) { clearTimeout(collapseTimer); collapseTimer = null }
-  if (!expanded.value && !expandTimer) {
-    expandTimer = setTimeout(() => {
-      expanded.value = true
-      expandTimer = null
-    }, 80)
-  }
+  if (!expanded.value) expanded.value = true
 }
 
 function onLeave() {
-  if (expandTimer) { clearTimeout(expandTimer); expandTimer = null }
   if (!collapseTimer) {
     collapseTimer = setTimeout(() => {
       expanded.value = false
@@ -42,8 +35,8 @@ watch(expanded, (v) => resize(v ? EXPANDED_H : COLLAPSED_H), { immediate: false 
 </script>
 
 <template>
-  <div class="window" @mouseenter="onEnter" @mouseleave="onLeave">
-    <div class="container" :class="{ expanded }">
+  <div class="window">
+    <div class="container" :class="{ expanded }" @mouseenter="onEnter" @mouseleave="onLeave">
       <Pill />
       <Transition name="panel">
         <div class="panel-wrap" v-if="expanded">
