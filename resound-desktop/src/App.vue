@@ -35,6 +35,9 @@ watch(expanded, (v) => resize(v ? EXPANDED_H : COLLAPSED_H), { immediate: false 
 <template>
   <div class="window">
     <div class="container" :class="{ expanded }" @mouseenter="onEnter" @mouseleave="onLeave">
+      <div class="settings-pos">
+        <SettingsPanel />
+      </div>
       <Pill />
       <Transition name="panel">
         <div class="panel-wrap" v-if="expanded">
@@ -42,9 +45,6 @@ watch(expanded, (v) => resize(v ? EXPANDED_H : COLLAPSED_H), { immediate: false 
           <ExpandedPanel />
         </div>
       </Transition>
-    </div>
-    <div class="settings-pos">
-      <SettingsPanel />
     </div>
   </div>
 </template>
@@ -60,7 +60,6 @@ watch(expanded, (v) => resize(v ? EXPANDED_H : COLLAPSED_H), { immediate: false 
 .container {
   background: rgba(12, 12, 12, 0.95);
   border-radius: 16px;
-  overflow: hidden;
   position: absolute;
   top: 0;
   left: 50%;
