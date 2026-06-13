@@ -73,3 +73,70 @@ jobs:
         with:
           name: resound-desktop-linux
           path: resound-desktop/src-tauri/target/release/bundle/
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: resound-desktop-windows
+          path: artifacts/windows
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: resound-desktop-linux
+          path: artifacts/linux
+
+      - name: Copy installers to website
+        run: |
+          mkdir -p resound-www/public/resound/
+
+          # Windows MSI
+          msi_file=$(find artifacts/windows/msi -name "*.msi" 2>/dev/null | head -1)
+          if [ -n "$msi_file" ]; then
+            cp "$msi_file" resound-www/public/resound/resound-windows.msi
+            echo "Copied Windows MSI: $msi_file"
+          fi
+
+          # Windows NSIS installer
+          exe_file=$(find artifacts/windows/nsis -name "*.exe" 2>/dev/null | head -1)
+          if [ -n "$exe_file" ]; then
+            cp "$exe_file" resound-www/public/resound/resound-windows.exe
+            echo "Copied Windows EXE: $exe_file"
+          fi
+
+          # Linux AppImage
+          appimage_file=$(find artifacts/linux/appimage -name "*.AppImage" 2>/dev/null | head -1)
+          if [ -n "$appimage_file" ]; then
+            cp "$appimage_file" resound-www/public/resound/resound-linux.AppImage
+            echo "Copied Linux AppImage: $appimage_file"
+          fi
+
+          # Linux deb
+          deb_file=$(find artifacts/linux/deb -name "*.deb" 2>/dev/null | head -1)
+          if [ -n "$deb_file" ]; then
+            cp "$deb_file" resound-www/public/resound/resound-linux.deb
+            echo "Copied Linux deb: $deb_file"
+          fi
+
+          ls -la resound-www/public/resound/
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add resound-www/public/resound/
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Update desktop build artifacts [skip ci]"
+            git push
+          fi

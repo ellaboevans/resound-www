@@ -4,21 +4,21 @@ export const siteUrl = (
 
 export const siteConfig = {
   name: "Resound",
-  title: "Resound - Dynamic Island Music Controller for Mac",
+  title: "Resound - Dynamic Island Music Controller",
   description:
-    "A Dynamic Island-style music controller for macOS with artwork, waveforms, playback controls, hotkeys, and menu bar access.",
+    "A Dynamic Island-style music controller for macOS, Windows, and Linux with artwork, waveforms, and playback controls.",
   url: siteUrl,
   ogImage: "/opengraph-image.png",
   creator: "Evans Elabo",
   keywords: [
     "Resound",
-    "Dynamic Island for Mac",
-    "macOS music controller",
-    "Mac menu bar music app",
-    "Spotify Mac controller",
-    "Apple Music Mac controller",
-    "now playing Mac",
-    "macOS Sonoma",
+    "Dynamic Island for desktop",
+    "music controller",
+    "menu bar music app",
+    "Spotify controller",
+    "Apple Music controller",
+    "now playing",
+    "cross-platform music app",
   ],
 } as const;
 
