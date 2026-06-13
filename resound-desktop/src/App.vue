@@ -34,7 +34,7 @@ function onLeave() {
     collapseTimer = setTimeout(() => {
       expanded.value = false
       collapseTimer = null
-    }, 350)
+    }, 120)
   }
 }
 
@@ -74,8 +74,7 @@ watch(expanded, (v) => resize(v ? EXPANDED_H : COLLAPSED_H), { immediate: false 
   top: 0;
   left: 50%;
   transform: translate(-50%, 0);
-  min-width: 200px;
-  max-width: 320px;
+  width: 100%;
   transition: all 0.2s ease;
 }
 
