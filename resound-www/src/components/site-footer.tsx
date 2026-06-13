@@ -3,6 +3,7 @@ import Link from "next/link";
 
 const footerLinks = [
   { label: "Features", href: "/#features" },
+  { label: "Changelog", href: "/changelog" },
   { label: "Download", href: "/download" },
   { label: "@dev_concept", href: "https://x.com/dev_concept" },
 ];
