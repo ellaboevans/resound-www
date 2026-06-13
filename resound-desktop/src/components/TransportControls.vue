@@ -8,14 +8,18 @@ const { state, playPause, nextTrack, prevTrack } = useNowPlaying();
 <template>
   <div class="transport">
     <button class="ctrl-btn" @click="prevTrack">
-      <SkipBack :size="16" />
+      <SkipBack :size="16" :stroke-width="0" color="#8f8f8f" fill="#8f8f8f" />
     </button>
     <button class="play-btn" @click="playPause">
       <Pause v-if="state.current.is_playing" :size="14" fill="black" />
       <Play v-else :size="14" :fill="'black'" />
     </button>
     <button class="ctrl-btn" @click="nextTrack">
-      <SkipForward :size="16" />
+      <SkipForward
+        :size="16"
+        :stroke-width="0"
+        color="#8f8f8f"
+        fill="#8f8f8f" />
     </button>
   </div>
 </template>
