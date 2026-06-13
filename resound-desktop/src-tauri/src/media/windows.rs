@@ -59,7 +59,7 @@ impl MediaProvider for WindowsMediaProvider {
         let artwork_base64 = (|| -> Option<String> {
             use windows::Storage::Streams::DataReader;
 
-            let thumbnail = display_props.Thumbnail().ok().and_then(|t| t.ok())?;
+            let thumbnail = display_props.Thumbnail().ok()?;
             let stream = thumbnail.OpenReadAsync().ok().and_then(|op| op.get().ok())?;
 
             let reader = DataReader::CreateDataReader(&stream).ok()?;
