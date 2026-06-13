@@ -66,9 +66,17 @@ function diffUpdate(data: NowPlayingInfo): boolean {
   return true;
 }
 
+function updateProgress() {
+  if (smoothPlaying && smoothDurationSec > 0) {
+    const elapsed = (performance.now() - anchorTime) / 1000;
+    const pos = Math.min(anchorPosSec + elapsed, smoothDurationSec);
+    smoothPosSec = pos;
+    state.current.progress = pos / smoothDurationSec;
+  }
+}
+
 function applyBackendData(data: NowPlayingInfo) {
   // If data was empty/stale don't touch smoothPlaying or anchor state.
-  // The rAF timer keeps advancing from its last known-good anchor.
   if (!diffUpdate(data)) return;
 
   if (data.duration > 0) {
@@ -92,16 +100,15 @@ function applyBackendData(data: NowPlayingInfo) {
   }
 
   smoothPlaying = data.is_playing;
+  // Compute progress from smooth state so the 1s poll interval keeps the
+  // timer alive even when requestAnimationFrame is suspended (Windows
+  // screen lock suspends the WebView render loop).
+  updateProgress();
   startStopRaf();
 }
 
 function tick() {
-  if (smoothPlaying && smoothDurationSec > 0) {
-    const elapsed = (performance.now() - anchorTime) / 1000;
-    const pos = Math.min(anchorPosSec + elapsed, smoothDurationSec);
-    smoothPosSec = pos;
-    state.current.progress = pos / smoothDurationSec;
-  }
+  updateProgress();
   rafId = requestAnimationFrame(tick);
 }
 
