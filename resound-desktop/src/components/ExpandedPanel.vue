@@ -141,7 +141,7 @@ function artworkUrl(): string {
   height: 100%;
   background: rgba(255, 255, 255, 0.5);
   border-radius: 2px;
-  transition: width 0.25s linear;
+  will-change: width;
 }
 
 .time-row {

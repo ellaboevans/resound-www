@@ -38,12 +38,39 @@ const state = reactive<{
 
 let unlisten: (() => void) | null = null
 let pollInterval: ReturnType<typeof setInterval> | null = null
+let rafId: number | null = null
+let smoothPosSec = 0
+let smoothDurationSec = 0
+let smoothPlaying = false
+let smoothAnchor = 0
+
+function applyBackendData(data: NowPlayingInfo) {
+  smoothPosSec = data.progress * data.duration
+  smoothDurationSec = data.duration
+  smoothPlaying = data.is_playing
+  smoothAnchor = performance.now()
+  state.current = { ...data, progress: smoothDurationSec > 0 ? smoothPosSec / smoothDurationSec : 0 }
+}
+
+function tick(now: number) {
+  if (smoothPlaying && smoothDurationSec > 0) {
+    const elapsed = (now - smoothAnchor) / 1000
+    smoothPosSec = Math.min(smoothPosSec + elapsed, smoothDurationSec)
+    smoothAnchor = now
+    const pct = smoothPosSec / smoothDurationSec
+    if (Math.abs(state.current.progress - pct) > 0.001) {
+      state.current.progress = pct
+    }
+  }
+  rafId = requestAnimationFrame(tick)
+}
 
 export function useNowPlaying() {
   async function fetchNowPlaying() {
     state.loading = true
     try {
-      state.current = await invoke<NowPlayingInfo>('get_now_playing')
+      const data = await invoke<NowPlayingInfo>('get_now_playing')
+      applyBackendData(data)
       state.error = null
     } catch (e) {
       state.error = String(e)
@@ -54,29 +81,35 @@ export function useNowPlaying() {
 
   async function playPause() {
     await invoke('play_pause')
-    await fetchNowPlaying()
+    applyBackendData(await invoke<NowPlayingInfo>('get_now_playing'))
   }
 
   async function nextTrack() {
     await invoke('next_track')
-    await fetchNowPlaying()
+    applyBackendData(await invoke<NowPlayingInfo>('get_now_playing'))
   }
 
   async function prevTrack() {
     await invoke('prev_track')
-    await fetchNowPlaying()
+    applyBackendData(await invoke<NowPlayingInfo>('get_now_playing'))
   }
 
   onMounted(async () => {
-    await fetchNowPlaying()
-    pollInterval = setInterval(fetchNowPlaying, 1000)
+    const data = await invoke<NowPlayingInfo>('get_now_playing')
+    applyBackendData(data)
+    pollInterval = setInterval(async () => {
+      const data = await invoke<NowPlayingInfo>('get_now_playing')
+      applyBackendData(data)
+    }, 1000)
+    rafId = requestAnimationFrame(tick)
     unlisten = await listen<NowPlayingInfo>('now-playing-changed', (event) => {
-      state.current = event.payload
+      applyBackendData(event.payload)
     })
   })
 
   onUnmounted(() => {
     if (pollInterval) clearInterval(pollInterval)
+    if (rafId) cancelAnimationFrame(rafId)
     if (unlisten) unlisten()
   })
 
