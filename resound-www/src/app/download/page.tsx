@@ -85,6 +85,7 @@ const platforms = [
       commands: [
         "sudo apt install ~/Downloads/resound-linux.deb",
         "sudo dnf install ~/Downloads/resound-linux.rpm",
+        "chmod +x ~/Downloads/resound-linux.AppImage && ~/Downloads/resound-linux.AppImage",
       ],
     },
   },
