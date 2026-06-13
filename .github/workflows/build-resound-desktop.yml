@@ -150,5 +150,6 @@ jobs:
             echo "No changes to commit"
           else
             git commit -m "Update desktop build artifacts [skip ci]"
+            git pull --rebase
             git push
           fi
