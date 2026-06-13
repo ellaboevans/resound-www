@@ -57,6 +57,7 @@ function artworkUrl(): string {
   width: 100%;
   height: 100%;
   transition: transform 0.15s ease;
+  -webkit-app-region: drag;
 }
 
 .pill.hovering {

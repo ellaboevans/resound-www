@@ -45,7 +45,6 @@ watch(expanded, (v) => resize(v ? EXPANDED_H : COLLAPSED_H), { immediate: false 
 
 .container {
   background: rgba(12, 12, 12, 0.95);
-  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 16px;
   overflow: hidden;
   position: absolute;
