@@ -61,6 +61,21 @@ impl MediaProvider for WindowsMediaProvider {
             .map(|s| s == GlobalSystemMediaTransportControlsSessionPlaybackStatus::Playing)
             .unwrap_or(false);
 
+        let timeline_props = session.GetTimelineProperties().ok();
+        let (duration, position) = if let Some(tp) = timeline_props {
+            let pos = tp.Position().ok()
+                .map(|ts| ts.Duration as f64 / 10_000_000.0)
+                .unwrap_or(0.0);
+            let dur = {
+                let end = tp.EndTime().ok().map(|ts| ts.Duration).unwrap_or(0);
+                let start = tp.StartTime().ok().map(|ts| ts.Duration).unwrap_or(0);
+                if end > start { (end - start) as f64 / 10_000_000.0 } else { 0.0 }
+            };
+            (dur, pos)
+        } else {
+            (0.0, 0.0)
+        };
+
         let artwork_base64 = (|| -> Option<String> {
             use windows::Storage::Streams::DataReader;
 
@@ -84,8 +99,8 @@ impl MediaProvider for WindowsMediaProvider {
             artist_name: artist,
             album_title: album,
             is_playing,
-            progress: 0.0,
-            duration: 0.0,
+            progress: if duration > 0.0 { position / duration } else { 0.0 },
+            duration,
             volume: 50,
             artwork_base64,
             source: "Windows.Media.Control".into(),
