@@ -23,14 +23,19 @@ impl WindowsMediaProvider {
     }
 
     fn ensure_manager(&self) -> Option<GlobalSystemMediaTransportControlsSessionManager> {
-        let mut guard = self.manager.lock().ok()?;
-        if guard.is_none() {
-            *guard = GlobalSystemMediaTransportControlsSessionManager::RequestAsync()
-                .ok()?
-                .get()
-                .ok();
+        {
+            let guard = self.manager.lock().ok()?;
+            if let Some(ref mgr) = *guard {
+                return Some(mgr.clone());
+            }
         }
-        guard.clone()
+        let mgr = GlobalSystemMediaTransportControlsSessionManager::RequestAsync()
+            .ok()?
+            .get()
+            .ok()?;
+        let mut guard = self.manager.lock().ok()?;
+        *guard = Some(mgr.clone());
+        Some(mgr)
     }
 }
 

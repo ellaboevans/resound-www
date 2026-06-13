@@ -37,8 +37,8 @@ function artworkUrl(): string {
       <div class="empty-icon" v-else>
         <span>♪</span>
       </div>
-      <div class="waveform">
-        <span v-for="i in 4" :key="i" class="bar" :style="{ animationDelay: `${i * 0.15}s` }"></span>
+      <div class="waveform" :class="{ playing: state.current.is_playing }">
+        <span v-for="i in 4" :key="i" class="bar"></span>
       </div>
     </div>
   </div>
@@ -105,7 +105,20 @@ function artworkUrl(): string {
   height: 100%;
   background: rgba(255, 255, 255, 0.4);
   border-radius: 2px;
+}
+
+.playing .bar {
   animation: wave 1s ease-in-out infinite;
+}
+
+.playing .bar:nth-child(2) {
+  animation-delay: 0.15s;
+}
+.playing .bar:nth-child(3) {
+  animation-delay: 0.3s;
+}
+.playing .bar:nth-child(4) {
+  animation-delay: 0.45s;
 }
 
 @keyframes wave {
