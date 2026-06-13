@@ -536,7 +536,7 @@ function DownloadHero() {
           </HeroReveal>
           <HeroReveal delay={0.05}>
             <h1 className="max-w-3xl text-balance font-heading text-5xl leading-[1.1] font-black tracking-normal sm:text-6xl lg:text-7xl">
-              Pick your platform and start listening.
+              Choose your operating system to download.
             </h1>
           </HeroReveal>
           <HeroReveal delay={0.1}>
