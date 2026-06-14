@@ -110,12 +110,16 @@ fn extract_metadata(conn: &Connection, player_name: &str) -> Option<(String, Str
                     Value::Str(s) => s.to_string(),
                     _ => continue,
                 };
+                let val = match v {
+                    Value::Value(inner) => *inner,
+                    other => other,
+                };
                 match key.as_str() {
                     "xesam:title" => {
-                        if let Value::Str(s) = v { title = s.to_string(); }
+                        if let Value::Str(s) = val { title = s.to_string(); }
                     }
                     "xesam:artist" => {
-                        match v {
+                        match val {
                             Value::Array(arr) => {
                                 let artists: Vec<String> = arr.iter()
                                     .filter_map(|v| match v {
@@ -130,13 +134,13 @@ fn extract_metadata(conn: &Connection, player_name: &str) -> Option<(String, Str
                         }
                     }
                     "xesam:album" => {
-                        if let Value::Str(s) = v { album = s.to_string(); }
+                        if let Value::Str(s) = val { album = s.to_string(); }
                     }
                     "mpris:length" => {
-                        if let Value::I64(n) = v { duration = n; }
+                        if let Value::I64(n) = val { duration = n; }
                     }
                     "mpris:artUrl" => {
-                        if let Value::Str(s) = v { art_url = s.to_string(); }
+                        if let Value::Str(s) = val { art_url = s.to_string(); }
                     }
                     _ => {}
                 }
