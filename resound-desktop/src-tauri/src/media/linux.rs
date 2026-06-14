@@ -22,7 +22,7 @@ fn find_mpris_players(conn: &Connection) -> Vec<String> {
     names.into_iter().filter(|n| n.contains("org.mpris.MediaPlayer2")).collect()
 }
 
-fn get_property(conn: &Connection, player_name: &str, property: &str) -> zbus::Result<Value<'_>> {
+fn get_property<'a>(conn: &'a Connection, player_name: &str, property: &str) -> zbus::Result<Value<'a>> {
     conn.call_method(
         Some(player_name),
         "/org/mpris/MediaPlayer2",
@@ -59,21 +59,18 @@ fn call_player_method(conn: &Connection, name: &str, method: &str) {
 fn get_metadata_string(metadata: &HashMap<String, Value<'_>>, key: &str) -> String {
     metadata.get(key)
         .and_then(|v| v.downcast_ref::<String>().ok())
-        .cloned()
         .unwrap_or_default()
 }
 
 fn get_metadata_artist(metadata: &HashMap<String, Value<'_>>) -> String {
     match metadata.get("xesam:artist") {
-        Some(v) => {
-            if let Ok(artists) = v.downcast_ref::<Vec<String>>() {
-                artists.join(", ")
-            } else if let Ok(s) = v.downcast_ref::<String>() {
-                s.clone()
-            } else {
-                String::new()
-            }
+        Some(Value::Array(arr)) => {
+            let artists: Vec<String> = arr.iter()
+                .filter_map(|v| v.downcast_ref::<String>().ok())
+                .collect();
+            artists.join(", ")
         }
+        Some(v) => v.downcast_ref::<String>().ok().unwrap_or_default(),
         None => String::new(),
     }
 }
@@ -81,7 +78,6 @@ fn get_metadata_artist(metadata: &HashMap<String, Value<'_>>) -> String {
 fn get_metadata_i64(metadata: &HashMap<String, Value<'_>>, key: &str) -> i64 {
     metadata.get(key)
         .and_then(|v| v.downcast_ref::<i64>().ok())
-        .copied()
         .unwrap_or(0)
 }
 
@@ -107,7 +103,6 @@ impl MediaProvider for LinuxMediaProvider {
         };
 
         let metadata_val = match get_property(conn, &player_name, "Metadata") {
-            Ok(Value::Variant(inner)) => *inner,
             Ok(v) => v,
             Err(_) => return NowPlayingInfo::default(),
         };
@@ -117,7 +112,7 @@ impl MediaProvider for LinuxMediaProvider {
                 let mut map = HashMap::new();
                 for (k, v) in dict {
                     if let Ok(key) = k.downcast_ref::<String>() {
-                        map.insert(key.clone(), v);
+                        map.insert(key, v);
                     }
                 }
                 map
