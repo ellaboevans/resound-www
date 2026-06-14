@@ -1,8 +1,15 @@
 <script setup lang="ts">
 import { useNowPlaying } from "../composables/useNowPlaying";
 import SettingsPanel from "./SettingsPanel.vue";
+import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 
 const { state } = useNowPlaying();
+const appWindow = getCurrentWebviewWindow();
+
+function onDrag(e: MouseEvent) {
+  if (e.button !== 0) return;
+  appWindow.startDragging();
+}
 
 function artworkUrl(): string {
   if (!state.current.artwork_base64) return "";
@@ -11,7 +18,7 @@ function artworkUrl(): string {
 </script>
 
 <template>
-  <div class="pill" data-tauri-drag-region>
+  <div class="pill" data-tauri-drag-region @mousedown.prevent="onDrag">
     <div class="pill-content">
       <div class="artwork" v-if="state.current.track_title">
         <img v-if="artworkUrl()" :src="artworkUrl()" alt="" />

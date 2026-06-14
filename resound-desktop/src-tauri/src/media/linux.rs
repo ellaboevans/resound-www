@@ -21,6 +21,13 @@ fn find_mpris_players(conn: &Connection) -> Vec<String> {
     names.into_iter().filter(|n| n.contains("org.mpris.MediaPlayer2")).collect()
 }
 
+fn unwrap_variant(value: Value<'_>) -> Value<'_> {
+    match value {
+        Value::Variant(inner) => *inner,
+        v => v,
+    }
+}
+
 fn get_playback_status(conn: &Connection, player_name: &str) -> String {
     let msg = conn.call_method(
         Some(player_name),
@@ -36,7 +43,7 @@ fn get_playback_status(conn: &Connection, player_name: &str) -> String {
                 Ok(v) => v,
                 _ => return String::new(),
             };
-            match value {
+            match unwrap_variant(value) {
                 Value::Str(s) => s.to_string(),
                 _ => String::new(),
             }
@@ -60,7 +67,7 @@ fn get_position_us(conn: &Connection, player_name: &str) -> i64 {
                 Ok(v) => v,
                 _ => return 0,
             };
-            match value {
+            match unwrap_variant(value) {
                 Value::I64(n) => n,
                 _ => 0,
             }
@@ -90,7 +97,7 @@ fn extract_metadata(conn: &Connection, player_name: &str) -> Option<(String, Str
     let body = msg.body();
     let value: Value<'_> = body.deserialize().ok()?;
 
-    match value {
+    match unwrap_variant(value) {
         Value::Dict(dict) => {
             let mut title = String::new();
             let mut artist = String::new();
