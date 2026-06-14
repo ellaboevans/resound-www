@@ -5,6 +5,8 @@ import Combine
 final class LockScreenCoordinator {
     private let viewController = LockScreenViewController()
     private var cancellables = Set<AnyCancellable>()
+    private var lockObserver: NSObjectProtocol?
+    private var unlockObserver: NSObjectProtocol?
     private var isLocked = false
 
     func start() {
@@ -16,18 +18,24 @@ final class LockScreenCoordinator {
     func stop() {
         viewController.hide()
         cancellables.removeAll()
+        if let lockObserver {
+            DistributedNotificationCenter.default().removeObserver(lockObserver)
+        }
+        if let unlockObserver {
+            DistributedNotificationCenter.default().removeObserver(unlockObserver)
+        }
     }
 
     private func observeLockState() {
         let center = DistributedNotificationCenter.default()
-        center.addObserver(forName: NSNotification.Name("com.apple.screenIsLocked"), object: nil, queue: .main) { [weak self] _ in
+        lockObserver = center.addObserver(forName: NSNotification.Name("com.apple.screenIsLocked"), object: nil, queue: .main) { [weak self] _ in
             Task { @MainActor [weak self] in
                 guard let self else { return }
                 isLocked = true
                 viewController.show()
             }
         }
-        center.addObserver(forName: NSNotification.Name("com.apple.screenIsUnlocked"), object: nil, queue: .main) { [weak self] _ in
+        unlockObserver = center.addObserver(forName: NSNotification.Name("com.apple.screenIsUnlocked"), object: nil, queue: .main) { [weak self] _ in
             Task { @MainActor [weak self] in
                 guard let self else { return }
                 isLocked = false
