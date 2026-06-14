@@ -6,6 +6,20 @@ pub struct LinuxMediaProvider {
     connection: Option<Connection>,
 }
 
+fn to_i64(value: &Value<'_>) -> Option<i64> {
+    match value {
+        Value::U8(n) => Some(*n as i64),
+        Value::I16(n) => Some(*n as i64),
+        Value::U16(n) => Some(*n as i64),
+        Value::I32(n) => Some(*n as i64),
+        Value::U32(n) => Some(*n as i64),
+        Value::I64(n) => Some(*n),
+        Value::U64(n) => Some(*n as i64),
+        Value::F64(n) => Some(*n as i64),
+        _ => None,
+    }
+}
+
 fn find_mpris_players(conn: &Connection) -> Vec<String> {
     let bus = conn.call_method(
         Some("org.freedesktop.DBus"),
@@ -67,13 +81,7 @@ fn get_position_us(conn: &Connection, player_name: &str) -> i64 {
                 Ok(v) => v,
                 _ => return 0,
             };
-            match unwrap_variant(value) {
-                Value::I64(n) => n,
-                Value::U64(n) => n as i64,
-                Value::I32(n) => n as i64,
-                Value::U32(n) => n as i64,
-                _ => 0,
-            }
+            to_i64(&unwrap_variant(value)).unwrap_or(0)
         }
         _ => 0,
     }
@@ -139,15 +147,9 @@ fn extract_metadata(conn: &Connection, player_name: &str) -> Option<(String, Str
                     "xesam:album" => {
                         if let Value::Str(s) = val { album = s.to_string(); }
                     }
-                    "mpris:length" => {
-                        match val {
-                            Value::I64(n) => duration = n,
-                            Value::U64(n) => duration = n as i64,
-                            Value::I32(n) => duration = n as i64,
-                            Value::U32(n) => duration = n as i64,
-                            _ => {}
-                        }
-                    }
+            "mpris:length" => {
+                duration = to_i64(&val).unwrap_or(0);
+            }
                     "mpris:artUrl" => {
                         if let Value::Str(s) = val { art_url = s.to_string(); }
                     }

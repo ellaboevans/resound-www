@@ -101,6 +101,11 @@ fn set_window_size(width: u32, height: u32, window: tauri::WebviewWindow) {
     ));
 }
 
+#[tauri::command]
+fn ensure_on_top(window: tauri::WebviewWindow) {
+    let _ = window.set_always_on_top(true);
+}
+
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
@@ -118,6 +123,7 @@ pub fn run() {
             get_settings,
             set_settings,
             set_window_size,
+            ensure_on_top,
         ])
         .setup(|app| {
             let _ = tray::setup_tray(app.handle());

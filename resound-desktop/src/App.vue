@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, provide } from "vue";
+import { ref, watch, provide, onMounted, onUnmounted } from "vue";
 import { invoke } from "@tauri-apps/api/core";
 import Pill from "./components/Pill.vue";
 import ExpandedPanel from "./components/ExpandedPanel.vue";
@@ -11,6 +11,18 @@ const EXPANDED_H = 280;
 const W = 280;
 
 let collapseTimer: ReturnType<typeof setTimeout> | null = null;
+
+// Linux: periodically re-assert always-on-top, since some WMs (GNOME,
+// KDE) may drop the hint when other windows gain focus
+let onTopTimer: ReturnType<typeof setInterval> | null = null;
+onMounted(() => {
+  onTopTimer = setInterval(() => {
+    invoke("ensure_on_top").catch(() => {});
+  }, 5000);
+});
+onUnmounted(() => {
+  if (onTopTimer) clearInterval(onTopTimer);
+});
 
 async function resize(h: number) {
   try {
