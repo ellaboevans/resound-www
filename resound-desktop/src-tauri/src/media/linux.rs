@@ -23,7 +23,7 @@ fn find_mpris_players(conn: &Connection) -> Vec<String> {
 
 fn unwrap_variant(value: Value<'_>) -> Value<'_> {
     match value {
-        Value::Variant(inner) => *inner,
+        Value::Value(inner) => *inner,
         v => v,
     }
 }
