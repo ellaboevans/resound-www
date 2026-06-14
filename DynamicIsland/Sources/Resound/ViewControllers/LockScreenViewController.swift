@@ -12,7 +12,11 @@ final class LockScreenViewController: NSViewController {
     private var elapsed: TimeInterval = 0
     private var duration: TimeInterval = 0
     private var isPlaying = false
-    private var isEmpty = true
+
+    private static let panelWidth: CGFloat = 340
+    private static let panelHeight: CGFloat = 172
+
+    deinit { hide() }
 
     func show() {
         guard window == nil else { return }
@@ -21,7 +25,7 @@ final class LockScreenViewController: NSViewController {
         hosting.translatesAutoresizingMaskIntoConstraints = false
         self.hostingView = hosting
 
-        let contentRect = NSRect(x: 0, y: 0, width: 340, height: 172)
+        let contentRect = NSRect(x: 0, y: 0, width: Self.panelWidth, height: Self.panelHeight)
         let panel = NSPanel(
             contentRect: contentRect,
             styleMask: [.borderless, .nonactivatingPanel],
@@ -56,9 +60,10 @@ final class LockScreenViewController: NSViewController {
         self.elapsed = elapsed
         self.duration = duration
         self.isPlaying = isPlaying
-        self.isEmpty = trackTitle.isEmpty
         hostingView?.rootView = makeView()
     }
+
+    private var isEmpty: Bool { trackTitle.isEmpty }
 
     private func makeView() -> LockScreenPlayerView {
         LockScreenPlayerView(
@@ -75,11 +80,8 @@ final class LockScreenViewController: NSViewController {
 
     private func positionWindow(_ panel: NSPanel) {
         guard let screen = NSScreen.main else { return }
-        let panelWidth: CGFloat = 340
-        let panelHeight: CGFloat = 172
-        let x = (screen.frame.width - panelWidth) / 2
-        let y = (screen.frame.height - panelHeight) / 2
-        panel.setFrame(NSRect(x: x, y: y, width: panelWidth, height: panelHeight), display: true)
-        panel.center()
+        let x = (screen.frame.width - Self.panelWidth) / 2
+        let y = (screen.frame.height - Self.panelHeight) / 2
+        panel.setFrame(NSRect(x: x, y: y, width: Self.panelWidth, height: Self.panelHeight), display: true)
     }
 }
