@@ -8,6 +8,8 @@ const appWindow = getCurrentWebviewWindow();
 
 function onDrag(e: MouseEvent) {
   if (e.button !== 0) return;
+  const target = e.target as HTMLElement;
+  if (target.closest('button, select, input, [role="button"]')) return;
   appWindow.startDragging();
 }
 
