@@ -1,7 +1,6 @@
 use super::{MediaProvider, NowPlayingInfo, VolumeInfo};
 use zbus::blocking::Connection;
 use zbus::zvariant::Value;
-use std::collections::HashMap;
 
 pub struct LinuxMediaProvider {
     connection: Option<Connection>,
@@ -32,7 +31,8 @@ fn get_playback_status(conn: &Connection, player_name: &str) -> String {
     );
     match msg {
         Ok(m) => {
-            let value: Value<'_> = match m.body().deserialize() {
+            let body = m.body();
+            let value: Value<'_> = match body.deserialize() {
                 Ok(v) => v,
                 _ => return String::new(),
             };
@@ -55,7 +55,8 @@ fn get_position_us(conn: &Connection, player_name: &str) -> i64 {
     );
     match msg {
         Ok(m) => {
-            let value: Value<'_> = match m.body().deserialize() {
+            let body = m.body();
+            let value: Value<'_> = match body.deserialize() {
                 Ok(v) => v,
                 _ => return 0,
             };
@@ -86,7 +87,8 @@ fn extract_metadata(conn: &Connection, player_name: &str) -> Option<(String, Str
         "Get",
         &("org.mpris.MediaPlayer2.Player", "Metadata"),
     ).ok()?;
-    let value: Value<'_> = msg.body().deserialize().ok()?;
+    let body = msg.body();
+    let value: Value<'_> = body.deserialize().ok()?;
 
     match value {
         Value::Dict(dict) => {
