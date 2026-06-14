@@ -1,6 +1,6 @@
 use super::{MediaProvider, NowPlayingInfo, VolumeInfo};
 use zbus::blocking::Connection;
-use zbus::zvariant::{OwnedValue, Value};
+use zbus::zvariant::Value;
 use std::collections::HashMap;
 
 pub struct LinuxMediaProvider {
@@ -22,28 +22,48 @@ fn find_mpris_players(conn: &Connection) -> Vec<String> {
     names.into_iter().filter(|n| n.contains("org.mpris.MediaPlayer2")).collect()
 }
 
-fn get_property(conn: &Connection, player_name: &str, property: &str) -> zbus::Result<OwnedValue> {
+fn get_playback_status(conn: &Connection, player_name: &str) -> String {
     let msg = conn.call_method(
         Some(player_name),
         "/org/mpris/MediaPlayer2",
         Some("org.freedesktop.DBus.Properties"),
         "Get",
-        &("org.mpris.MediaPlayer2.Player", property),
-    )?;
-    let value: Value<'_> = msg.body().deserialize()?;
-    Ok(OwnedValue::from(value))
-}
-
-fn get_playback_status(conn: &Connection, player_name: &str) -> String {
-    match get_property(conn, player_name, "PlaybackStatus") {
-        Ok(OwnedValue::Str(s)) => s.to_string(),
+        &("org.mpris.MediaPlayer2.Player", "PlaybackStatus"),
+    );
+    match msg {
+        Ok(m) => {
+            let value: Value<'_> = match m.body().deserialize() {
+                Ok(v) => v,
+                _ => return String::new(),
+            };
+            match value {
+                Value::Str(s) => s.to_string(),
+                _ => String::new(),
+            }
+        }
         _ => String::new(),
     }
 }
 
 fn get_position_us(conn: &Connection, player_name: &str) -> i64 {
-    match get_property(conn, player_name, "Position") {
-        Ok(OwnedValue::I64(n)) => n,
+    let msg = conn.call_method(
+        Some(player_name),
+        "/org/mpris/MediaPlayer2",
+        Some("org.freedesktop.DBus.Properties"),
+        "Get",
+        &("org.mpris.MediaPlayer2.Player", "Position"),
+    );
+    match msg {
+        Ok(m) => {
+            let value: Value<'_> = match m.body().deserialize() {
+                Ok(v) => v,
+                _ => return 0,
+            };
+            match value {
+                Value::I64(n) => n,
+                _ => 0,
+            }
+        }
         _ => 0,
     }
 }
@@ -58,33 +78,64 @@ fn call_player_method(conn: &Connection, name: &str, method: &str) {
     ).and_then(|_| Ok(()));
 }
 
-fn get_metadata_string(metadata: &HashMap<String, OwnedValue>, key: &str) -> String {
-    match metadata.get(key) {
-        Some(OwnedValue::Str(s)) => s.to_string(),
-        _ => String::new(),
-    }
-}
+fn extract_metadata(conn: &Connection, player_name: &str) -> Option<(String, String, String, i64, String)> {
+    let msg = conn.call_method(
+        Some(player_name),
+        "/org/mpris/MediaPlayer2",
+        Some("org.freedesktop.DBus.Properties"),
+        "Get",
+        &("org.mpris.MediaPlayer2.Player", "Metadata"),
+    ).ok()?;
+    let value: Value<'_> = msg.body().deserialize().ok()?;
 
-fn get_metadata_artist(metadata: &HashMap<String, OwnedValue>) -> String {
-    match metadata.get("xesam:artist") {
-        Some(OwnedValue::Array(arr)) => {
-            let artists: Vec<String> = arr.iter()
-                .filter_map(|v| match v {
-                    OwnedValue::Str(s) => Some(s.to_string()),
-                    _ => None,
-                })
-                .collect();
-            artists.join(", ")
+    match value {
+        Value::Dict(dict) => {
+            let mut title = String::new();
+            let mut artist = String::new();
+            let mut album = String::new();
+            let mut duration = 0i64;
+            let mut art_url = String::new();
+
+            for (k, v) in dict {
+                let key = match k {
+                    Value::Str(s) => s.to_string(),
+                    _ => continue,
+                };
+                match key.as_str() {
+                    "xesam:title" => {
+                        if let Value::Str(s) = v { title = s.to_string(); }
+                    }
+                    "xesam:artist" => {
+                        match v {
+                            Value::Array(arr) => {
+                                let artists: Vec<String> = arr.iter()
+                                    .filter_map(|v| match v {
+                                        Value::Str(s) => Some(s.to_string()),
+                                        _ => None,
+                                    })
+                                    .collect();
+                                artist = artists.join(", ");
+                            }
+                            Value::Str(s) => artist = s.to_string(),
+                            _ => {}
+                        }
+                    }
+                    "xesam:album" => {
+                        if let Value::Str(s) = v { album = s.to_string(); }
+                    }
+                    "mpris:length" => {
+                        if let Value::I64(n) = v { duration = n; }
+                    }
+                    "mpris:artUrl" => {
+                        if let Value::Str(s) = v { art_url = s.to_string(); }
+                    }
+                    _ => {}
+                }
+            }
+
+            Some((title, artist, album, duration, art_url))
         }
-        Some(OwnedValue::Str(s)) => s.to_string(),
-        _ => String::new(),
-    }
-}
-
-fn get_metadata_i64(metadata: &HashMap<String, OwnedValue>, key: &str) -> i64 {
-    match metadata.get(key) {
-        Some(OwnedValue::I64(n)) => *n,
-        _ => 0,
+        _ => None,
     }
 }
 
@@ -109,32 +160,13 @@ impl MediaProvider for LinuxMediaProvider {
             None => return NowPlayingInfo::default(),
         };
 
-        let metadata_val = match get_property(conn, &player_name, "Metadata") {
-            Ok(v) => v,
-            Err(_) => return NowPlayingInfo::default(),
-        };
-
-        let metadata: HashMap<String, OwnedValue> = match metadata_val {
-            OwnedValue::Dict(dict) => {
-                let mut map = HashMap::new();
-                for (k, v) in dict {
-                    if let OwnedValue::Str(key) = k {
-                        map.insert(key.to_string(), v);
-                    }
-                }
-                map
-            }
-            _ => return NowPlayingInfo::default(),
-        };
-
-        let title = get_metadata_string(&metadata, "xesam:title");
-        let artist = get_metadata_artist(&metadata);
-        let album = get_metadata_string(&metadata, "xesam:album");
-        let duration_us = get_metadata_i64(&metadata, "mpris:length");
-        let artwork_url = get_metadata_string(&metadata, "mpris:artUrl");
-
         let status = get_playback_status(conn, &player_name);
         let position_us = get_position_us(conn, &player_name);
+
+        let (title, artist, album, duration_us, artwork_url) = match extract_metadata(conn, &player_name) {
+            Some(v) => v,
+            None => return NowPlayingInfo::default(),
+        };
 
         let duration_secs = duration_us as f64 / 1_000_000.0;
         let position_secs = position_us as f64 / 1_000_000.0;
