@@ -9,6 +9,48 @@ export interface ChangelogEntry {
 export const changelog: ChangelogEntry[] = [
   {
     version: "0.1.0",
+    date: "2026-06-14",
+    type: "fix",
+    description: "Fixed settings dropdown not opening on Windows (drag handler swallowing click events).",
+    isBeta: true,
+  },
+  {
+    version: "0.1.0",
+    date: "2026-06-14",
+    type: "fix",
+    description: "Fixed settings dropdown not opening on Linux (WebKitGTK unsupported CSS property).",
+    isBeta: true,
+  },
+  {
+    version: "0.1.0",
+    date: "2026-06-14",
+    type: "fix",
+    description: "Fixed Linux window not staying on top (periodic always-on-top re-assertion via IPC).",
+    isBeta: true,
+  },
+  {
+    version: "0.1.0",
+    date: "2026-06-14",
+    type: "fix",
+    description: "Fixed Linux music timer stuck at 0:00 (comprehensive MPRIS numeric type handling for Position and mpris:length).",
+    isBeta: true,
+  },
+  {
+    version: "0.1.0",
+    date: "2026-06-14",
+    type: "fix",
+    description: "Fixed Linux window positioning at center-top (outer_size fallback + delayed reposition after window map).",
+    isBeta: true,
+  },
+  {
+    version: "0.1.0",
+    date: "2026-06-14",
+    type: "fix",
+    description: "Fixed Linux MPRIS track info not populating (zvariant 4.2.0 Variant naming + a{sv} per-value unwrapping).",
+    isBeta: true,
+  },
+  {
+    version: "0.1.0",
     date: "2026-06-13",
     type: "feature",
     description: "Windows & Linux desktop builds released.",
