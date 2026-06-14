@@ -1,6 +1,6 @@
 use super::{MediaProvider, NowPlayingInfo, VolumeInfo};
 use zbus::blocking::Connection;
-use zbus::zvariant::Value;
+use zbus::zvariant::{OwnedValue, Value};
 use std::collections::HashMap;
 
 pub struct LinuxMediaProvider {
@@ -22,26 +22,28 @@ fn find_mpris_players(conn: &Connection) -> Vec<String> {
     names.into_iter().filter(|n| n.contains("org.mpris.MediaPlayer2")).collect()
 }
 
-fn get_property<'a>(conn: &'a Connection, player_name: &str, property: &str) -> zbus::Result<Value<'a>> {
-    conn.call_method(
+fn get_property(conn: &Connection, player_name: &str, property: &str) -> zbus::Result<OwnedValue> {
+    let msg = conn.call_method(
         Some(player_name),
         "/org/mpris/MediaPlayer2",
         Some("org.freedesktop.DBus.Properties"),
         "Get",
         &("org.mpris.MediaPlayer2.Player", property),
-    ).and_then(|m| m.body().deserialize())
+    )?;
+    let value: Value<'_> = msg.body().deserialize()?;
+    Ok(OwnedValue::from(value))
 }
 
 fn get_playback_status(conn: &Connection, player_name: &str) -> String {
     match get_property(conn, player_name, "PlaybackStatus") {
-        Ok(Value::Str(s)) => s.to_string(),
+        Ok(OwnedValue::Str(s)) => s.to_string(),
         _ => String::new(),
     }
 }
 
 fn get_position_us(conn: &Connection, player_name: &str) -> i64 {
     match get_property(conn, player_name, "Position") {
-        Ok(Value::I64(n)) => n,
+        Ok(OwnedValue::I64(n)) => n,
         _ => 0,
     }
 }
@@ -56,29 +58,34 @@ fn call_player_method(conn: &Connection, name: &str, method: &str) {
     ).and_then(|_| Ok(()));
 }
 
-fn get_metadata_string(metadata: &HashMap<String, Value<'_>>, key: &str) -> String {
-    metadata.get(key)
-        .and_then(|v| v.downcast_ref::<String>().ok())
-        .unwrap_or_default()
-}
-
-fn get_metadata_artist(metadata: &HashMap<String, Value<'_>>) -> String {
-    match metadata.get("xesam:artist") {
-        Some(Value::Array(arr)) => {
-            let artists: Vec<String> = arr.iter()
-                .filter_map(|v| v.downcast_ref::<String>().ok())
-                .collect();
-            artists.join(", ")
-        }
-        Some(v) => v.downcast_ref::<String>().ok().unwrap_or_default(),
-        None => String::new(),
+fn get_metadata_string(metadata: &HashMap<String, OwnedValue>, key: &str) -> String {
+    match metadata.get(key) {
+        Some(OwnedValue::Str(s)) => s.to_string(),
+        _ => String::new(),
     }
 }
 
-fn get_metadata_i64(metadata: &HashMap<String, Value<'_>>, key: &str) -> i64 {
-    metadata.get(key)
-        .and_then(|v| v.downcast_ref::<i64>().ok())
-        .unwrap_or(0)
+fn get_metadata_artist(metadata: &HashMap<String, OwnedValue>) -> String {
+    match metadata.get("xesam:artist") {
+        Some(OwnedValue::Array(arr)) => {
+            let artists: Vec<String> = arr.iter()
+                .filter_map(|v| match v {
+                    OwnedValue::Str(s) => Some(s.to_string()),
+                    _ => None,
+                })
+                .collect();
+            artists.join(", ")
+        }
+        Some(OwnedValue::Str(s)) => s.to_string(),
+        _ => String::new(),
+    }
+}
+
+fn get_metadata_i64(metadata: &HashMap<String, OwnedValue>, key: &str) -> i64 {
+    match metadata.get(key) {
+        Some(OwnedValue::I64(n)) => *n,
+        _ => 0,
+    }
 }
 
 impl LinuxMediaProvider {
@@ -107,12 +114,12 @@ impl MediaProvider for LinuxMediaProvider {
             Err(_) => return NowPlayingInfo::default(),
         };
 
-        let metadata: HashMap<String, Value<'_>> = match metadata_val {
-            Value::Dict(dict) => {
+        let metadata: HashMap<String, OwnedValue> = match metadata_val {
+            OwnedValue::Dict(dict) => {
                 let mut map = HashMap::new();
                 for (k, v) in dict {
-                    if let Ok(key) = k.downcast_ref::<String>() {
-                        map.insert(key, v);
+                    if let OwnedValue::Str(key) = k {
+                        map.insert(key.to_string(), v);
                     }
                 }
                 map
