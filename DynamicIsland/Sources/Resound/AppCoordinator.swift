@@ -5,6 +5,7 @@ final class AppCoordinator {
     private let nowPlaying: NowPlayingViewModel
     private let windowManager: WindowManager
     private let menuBarManager: MenuBarManager
+    private let lockScreen = LockScreenCoordinator()
 
     convenience init() {
         self.init(
@@ -28,9 +29,11 @@ final class AppCoordinator {
         nowPlaying.start()
         windowManager.show()
         menuBarManager.setup()
+        lockScreen.start()
     }
 
     func stop() {
         nowPlaying.stop()
+        lockScreen.stop()
     }
 }
