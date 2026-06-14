@@ -49,7 +49,6 @@ if (expanded) {
   font-size: 14px;
   cursor: pointer;
   padding: 4px 8px;
-  -webkit-app-region: no-drag;
   display: flex;
   align-items: center;
   justify-content: center;
