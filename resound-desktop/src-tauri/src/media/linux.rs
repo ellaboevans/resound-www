@@ -69,6 +69,9 @@ fn get_position_us(conn: &Connection, player_name: &str) -> i64 {
             };
             match unwrap_variant(value) {
                 Value::I64(n) => n,
+                Value::U64(n) => n as i64,
+                Value::I32(n) => n as i64,
+                Value::U32(n) => n as i64,
                 _ => 0,
             }
         }
@@ -137,7 +140,13 @@ fn extract_metadata(conn: &Connection, player_name: &str) -> Option<(String, Str
                         if let Value::Str(s) = val { album = s.to_string(); }
                     }
                     "mpris:length" => {
-                        if let Value::I64(n) = val { duration = n; }
+                        match val {
+                            Value::I64(n) => duration = n,
+                            Value::U64(n) => duration = n as i64,
+                            Value::I32(n) => duration = n as i64,
+                            Value::U32(n) => duration = n as i64,
+                            _ => {}
+                        }
                     }
                     "mpris:artUrl" => {
                         if let Value::Str(s) = val { art_url = s.to_string(); }

@@ -123,6 +123,15 @@ pub fn run() {
             let _ = tray::setup_tray(app.handle());
             if let Some(window) = app.get_webview_window("main") {
                 positioning::center_window_at_top(&window);
+                let _ = window.set_always_on_top(true);
+
+                // Re-position after window is mapped (fixes Linux where
+                // set_position during setup can be silently ignored)
+                let win = window.clone();
+                std::thread::spawn(move || {
+                    std::thread::sleep(std::time::Duration::from_millis(200));
+                    positioning::center_window_at_top(&win);
+                });
             }
             Ok(())
         })
