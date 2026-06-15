@@ -9,6 +9,34 @@ export interface ChangelogEntry {
 export const changelog: ChangelogEntry[] = [
   {
     version: "0.1.0",
+    date: "2026-06-15",
+    type: "fix",
+    description: "Fixed settings not applying — auto-hide, launch-at-login, and music source filter now functional.",
+    isBeta: true,
+  },
+  {
+    version: "0.1.0",
+    date: "2026-06-15",
+    type: "feature",
+    description: "Universal binary build for macOS (arm64 + x86_64) to support Intel Macs.",
+    isBeta: true,
+  },
+  {
+    version: "0.1.0",
+    date: "2026-06-15",
+    type: "fix",
+    description: "Fixed launch-at-login not persisting (wired tauri-plugin-autostart, now saves on toggle).",
+    isBeta: true,
+  },
+  {
+    version: "0.1.0",
+    date: "2026-06-15",
+    type: "feature",
+    description: "Music source filter: Spotify-only mode now filters non-Spotify sources on Windows and Linux.",
+    isBeta: true,
+  },
+  {
+    version: "0.1.0",
     date: "2026-06-14",
     type: "fix",
     description: "Fixed settings dropdown not opening on Windows (drag handler swallowing click events).",
@@ -83,34 +111,6 @@ export const changelog: ChangelogEntry[] = [
     type: "feature",
     description:
       "Resound Desktop beta: Tauri v2 + Vue 3 cross-platform companion with floating pill UI, system tray, Now Playing sync via GSMTC (Windows) and MPRIS (Linux).",
-    isBeta: true,
-  },
-  {
-    version: "0.1.0",
-    date: "2026-06-15",
-    type: "fix",
-    description: "Fixed settings not applying — auto-hide, launch-at-login, and music source filter now functional.",
-    isBeta: true,
-  },
-  {
-    version: "0.1.0",
-    date: "2026-06-15",
-    type: "feature",
-    description: "Universal binary build for macOS (arm64 + x86_64) to support Intel Macs.",
-    isBeta: true,
-  },
-  {
-    version: "0.1.0",
-    date: "2026-06-15",
-    type: "fix",
-    description: "Fixed launch-at-login not persisting (wired tauri-plugin-autostart, now saves on toggle).",
-    isBeta: true,
-  },
-  {
-    version: "0.1.0",
-    date: "2026-06-15",
-    type: "feature",
-    description: "Music source filter: Spotify-only mode now filters non-Spotify sources on Windows and Linux.",
     isBeta: true,
   },
   {
