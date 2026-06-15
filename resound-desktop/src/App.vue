@@ -1,8 +1,15 @@
 <script setup lang="ts">
 import { ref, watch, provide, onMounted, onUnmounted } from "vue";
 import { invoke } from "@tauri-apps/api/core";
+import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import Pill from "./components/Pill.vue";
 import ExpandedPanel from "./components/ExpandedPanel.vue";
+import { useSettings } from "./composables/useSettings";
+import { useNowPlaying } from "./composables/useNowPlaying";
+
+const { state } = useNowPlaying();
+const settings = useSettings();
+const appWindow = getCurrentWebviewWindow();
 
 const expanded = ref(false);
 provide("expanded", expanded);
@@ -12,10 +19,24 @@ const W = 280;
 
 let collapseTimer: ReturnType<typeof setTimeout> | null = null;
 
+// Auto-hide: hide window when nothing is playing and setting is enabled
+watch(
+  [() => state.current.track_title, () => settings.state.autoHide],
+  async ([title, autoHide]) => {
+    if (autoHide && !title) {
+      await appWindow.hide().catch(() => {});
+    } else {
+      await appWindow.show().catch(() => {});
+    }
+  },
+  { immediate: true },
+);
+
 // Linux: periodically re-assert always-on-top, since some WMs (GNOME,
 // KDE) may drop the hint when other windows gain focus
 let onTopTimer: ReturnType<typeof setInterval> | null = null;
-onMounted(() => {
+onMounted(async () => {
+  await settings.load();
   onTopTimer = setInterval(() => {
     invoke("ensure_on_top").catch(() => {});
   }, 5000);

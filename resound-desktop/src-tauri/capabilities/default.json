@@ -7,6 +7,9 @@
     "core:default",
     "core:window:allow-start-dragging",
     "core:window:allow-set-always-on-top",
-    "shell:default"
+    "core:window:allow-show",
+    "core:window:allow-hide",
+    "shell:default",
+    "autostart:default"
   ]
 }

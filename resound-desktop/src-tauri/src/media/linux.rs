@@ -177,6 +177,13 @@ impl LinuxMediaProvider {
     }
 }
 
+fn player_source_name(bus_name: &str) -> String {
+    bus_name
+        .strip_prefix("org.mpris.MediaPlayer2.")
+        .unwrap_or(bus_name)
+        .to_lowercase()
+}
+
 impl MediaProvider for LinuxMediaProvider {
     fn current_track(&self) -> NowPlayingInfo {
         let (player_name, conn) = match self.best_player() {
@@ -206,7 +213,7 @@ impl MediaProvider for LinuxMediaProvider {
             duration: duration_secs,
             volume: 50,
             artwork_base64: artwork_b64,
-            source: "MPRIS".into(),
+            source: player_source_name(&player_name),
         }
     }
 

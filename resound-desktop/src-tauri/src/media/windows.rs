@@ -95,6 +95,11 @@ impl MediaProvider for WindowsMediaProvider {
             (0.0, 0.0)
         };
 
+        let source_app = session.SourceAppUserModelId()
+            .ok()
+            .map(|s| s.to_string())
+            .unwrap_or_default();
+
         let artwork_base64 = (|| -> Option<String> {
             use windows::Storage::Streams::DataReader;
 
@@ -122,7 +127,7 @@ impl MediaProvider for WindowsMediaProvider {
             duration,
             volume: 50,
             artwork_base64,
-            source: "Windows.Media.Control".into(),
+            source: if source_app.is_empty() { "windows-media".into() } else { source_app.to_lowercase() },
         }
     }
 

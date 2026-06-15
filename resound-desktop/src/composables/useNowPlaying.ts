@@ -1,5 +1,6 @@
 import { reactive, onMounted, onUnmounted } from "vue";
 import { invoke } from "@tauri-apps/api/core";
+import { useSettings } from "./useSettings";
 
 export interface NowPlayingInfo {
   track_title: string;
@@ -72,6 +73,15 @@ function updateProgress() {
 let emptyTimeout: ReturnType<typeof setTimeout> | null = null;
 
 function applyBackendData(data: NowPlayingInfo) {
+  // Music source filter: if set to "spotify", hide non-Spotify sources
+  const settings = useSettings();
+  if (settings.state.musicSource === 'spotify') {
+    const src = data.source.toLowerCase();
+    if (src !== '' && !src.includes('spotify')) {
+      data = { ...emptyTrack };
+    }
+  }
+
   // When data goes empty while we have a valid track, debounce 3s before
   // clearing. This distinguishes screen lock (transient — music still plays)
   // from app closed (permanent — show empty state).

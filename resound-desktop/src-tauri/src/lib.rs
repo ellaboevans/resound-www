@@ -1,6 +1,7 @@
 use std::sync::Mutex;
 use serde::{Deserialize, Serialize};
 use tauri::Manager;
+use tauri_plugin_autostart::ManagerExt;
 
 mod media;
 mod positioning;
@@ -76,21 +77,31 @@ fn set_volume(level: f64, state: tauri::State<'_, Mutex<AppState>>) {
 }
 
 #[tauri::command]
-fn get_settings(state: tauri::State<'_, Mutex<AppState>>) -> AppSettings {
+fn get_settings(state: tauri::State<'_, Mutex<AppState>>, app: tauri::AppHandle) -> AppSettings {
+    let mut settings = AppSettings::default();
     if let Some(app_state) = state.lock().ok() {
         if let Ok(s) = app_state.settings.lock() {
-            return s.clone();
+            settings = s.clone();
         }
     }
-    AppSettings::default()
+    let autolaunch = app.autolaunch();
+    settings.launch_at_login = autolaunch.is_enabled().unwrap_or(false);
+    settings
 }
 
 #[tauri::command]
-fn set_settings(settings: AppSettings, state: tauri::State<'_, Mutex<AppState>>) {
+fn set_settings(settings: AppSettings, state: tauri::State<'_, Mutex<AppState>>, app: tauri::AppHandle) {
+    let launch_at_login = settings.launch_at_login;
     if let Some(app_state) = state.lock().ok() {
         if let Ok(mut s) = app_state.settings.lock() {
             *s = settings;
         }
+    }
+    let autolaunch = app.autolaunch();
+    if launch_at_login {
+        let _ = autolaunch.enable();
+    } else {
+        let _ = autolaunch.disable();
     }
 }
 
@@ -109,6 +120,7 @@ fn ensure_on_top(window: tauri::WebviewWindow) {
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
+        .plugin(tauri_plugin_autostart::init(tauri_plugin_autostart::MacosLauncher::LaunchAgent, None))
         .manage(Mutex::new(AppState {
             media_manager: media::MediaManager::new(),
             settings: Mutex::new(AppSettings::default()),
