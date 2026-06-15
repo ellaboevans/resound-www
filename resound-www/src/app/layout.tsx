@@ -74,11 +74,11 @@ export default function RootLayout({
     <html lang="en" className="dark h-full antialiased">
       <body className="min-h-full flex flex-col">
         <Analytics />
-        <Script
+        {/* <Script
           src="https://helpdesk-widget.mnworth.com/widget.js"
           data-key="wk_5a62bd5cca3b86d1523cc933194fd4cd7ced"
           strategy="lazyOnload"
-        />
+        /> */}
         <div className="flex min-h-dvh flex-col">
           <SiteHeader />
           <div className="flex-1">{children}</div>
