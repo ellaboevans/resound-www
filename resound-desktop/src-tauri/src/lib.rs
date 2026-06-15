@@ -90,7 +90,7 @@ fn get_settings(state: tauri::State<'_, Mutex<AppState>>, app: tauri::AppHandle)
 }
 
 #[tauri::command]
-fn set_settings(settings: AppSettings, state: tauri::State<'_, Mutex<AppState>>, app: tauri::AppHandle) {
+fn set_settings(settings: AppSettings, state: tauri::State<'_, Mutex<AppState>>, app: tauri::AppHandle) -> Result<String, String> {
     let launch_at_login = settings.launch_at_login;
     if let Some(app_state) = state.lock().ok() {
         if let Ok(mut s) = app_state.settings.lock() {
@@ -98,11 +98,18 @@ fn set_settings(settings: AppSettings, state: tauri::State<'_, Mutex<AppState>>,
         }
     }
     let autolaunch = app.autolaunch();
-    if launch_at_login {
-        let _ = autolaunch.enable();
+    let current_exe = std::env::current_exe().map(|p| p.display().to_string()).unwrap_or_default();
+    let already = autolaunch.is_enabled().unwrap_or(false);
+    let result: Result<String, String> = if launch_at_login {
+        autolaunch.enable().map(|_| "enabled".into()).map_err(|e| format!("enable failed: {e}"))
     } else {
-        let _ = autolaunch.disable();
-    }
+        autolaunch.disable().map(|_| "disabled".into()).map_err(|e| format!("disable failed: {e}"))
+    };
+    let diag = format!(
+        "launch_at_login={launch_at_login}, was_already={already}, result={result:?}, exe={current_exe}"
+    );
+    eprintln!("[resound] set_settings: {diag}");
+    Ok(diag)
 }
 
 #[tauri::command]

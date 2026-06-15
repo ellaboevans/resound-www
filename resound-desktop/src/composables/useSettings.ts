@@ -23,8 +23,11 @@ export function useSettings() {
 
   async function save() {
     try {
-      await invoke('set_settings', { settings: { ...state } })
-    } catch {}
+      const diag = await invoke<string>('set_settings', { settings: { ...state } })
+      console.log('[resound] set_settings:', diag)
+    } catch (e) {
+      console.error('[resound] set_settings failed:', e)
+    }
   }
 
   function setAutoHide(v: boolean) {
