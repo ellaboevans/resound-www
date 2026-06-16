@@ -1,0 +1,41 @@
+<h1>The Story of Resound</h1>
+
+<h2>Why music controls should always be a glance away</h2>
+
+<p>There's a friction to switching apps just to see what song is playing. You're coding, you hit play on a track, and then — to skip, pause, or see the title — you have to leave what you're doing. It's a small interruption, but it adds up. Hundreds of times a year, you context-switch for something that should be instant.</p>
+
+<p>That friction is why Resound exists.</p>
+
+<h2>The idea</h2>
+
+<p>The iPhone Dynamic Island is clever not because it's flashy, but because it's <em>there</em> — it turns a hardware limitation into a persistent, glanceable UI that lives at the edge of your attention. You never go looking for it. It's just present when you need it.</p>
+
+<p>That's the same feeling we wanted for desktop music control. A pill at the top of the screen: collapsed into artwork and a subtle waveform when you're focused, expanding into full transport controls on hover. No dock icon, no window management, no interruption.</p>
+
+<h2>The first version</h2>
+
+<p>We built the first version as a native macOS app using Swift. It reads playback from Spotify and Apple Music through macOS's built-in scripting bridges — AppleScript and MediaRemote — and also detects YouTube Music tabs in Chrome. The UI is a floating pill near the notch that reacts to hover: it expands, shows album art, a progress bar, elapsed and remaining time, and skip/play-pause buttons.</p>
+
+<p>The response was immediate: people wanted it. And then they wanted it everywhere.</p>
+
+<h2>The lock screen wall</h2>
+
+<p>macOS 26 introduced a new NowPlaying framework at WWDC, promising exactly what we needed: lock screen media attribution for third-party apps. We spent weeks trying every path — private APIs, audio engine anchors, the full WidgetKit extension setup. Every approach hit the same wall: the OS kernel prevents third-party apps from registering as the active now-playing client for lock screen display. The new framework simply wasn't available in the current build. We walked away knowing we'd come back to it when the OS caught up.</p>
+
+<h2>Going cross-platform</h2>
+
+<p>While the macOS app found its audience, a clear pattern emerged: the people asking for Resound weren't just on Macs. They were on Windows machines with Spotify open all day. They were on Linux workstations where every native music tool felt abandoned. The core need — persistent, minimal, always-available music controls — wasn't platform-specific.</p>
+
+<p>So we rebuilt. Not a port, but a ground-up cross-platform companion using Tauri 2 and Vue 3 — a Rust backend handling system media integration on each OS, with a shared frontend that renders the same floating pill UI everywhere. On Windows it talks to the Global System Media Transport Controls API. On Linux it connects to MPRIS over D-Bus. On macOS it uses the same native hooks as the original app.</p>
+
+<h2>The design principle</h2>
+
+<p>Resound has one job: show you what's playing and let you control it. It doesn't have a library, a queue, or a settings panel full of options you'll never touch. It appears only when you need it — hover to expand, leave it alone and it shrinks back to a pill. On Windows and Linux it supports auto-hide: if nothing is playing, the window fades away completely until music starts again.</p>
+
+<p>The settings are minimal: auto-hide toggle, launch at login, and a music source selector if you want to filter by specific apps. The system tray holds Show and Quit. That's it.</p>
+
+<h2>What's next</h2>
+
+<p>The macOS original continues as the primary experience on that platform, with deeper system integration and native feel. The cross-platform desktop app brings the same philosophy to Windows and Linux — write the same code, ship to every OS. When the macOS lock screen APIs mature, we'll be there. In the meantime, Resound stays in its lane: a quiet presence at the top of your screen that disappears when you don't need it and is always there when you do.</p>
+
+<p><em>Resound is available now for macOS, Windows, and Linux. Works with Spotify, Apple Music, and more.</em></p>
